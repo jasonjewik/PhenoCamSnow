@@ -41,6 +41,7 @@ def main():
     args = parser.parse_args()
     inpath = Path(args.dir).resolve()
     modelpath = Path(args.model).resolve()
+    outpath = Path(args.output).resolve()
 
     if not modelpath.exists():
         print(f'error: {modelpath} does not exist', file=sys.stderr)
@@ -56,6 +57,10 @@ def main():
         print(f'error: {inpath} is not a directory', file=sys.stderr)
         sys.exit(1)
 
+    if outpath.exists() and not outpath.is_file():
+        print(f'error: {outpath} is not a file', file=sys.stderr)
+        sys.exit(1)
+
     fpaths = inpath.glob('*.jpg')
     if args.stable:
         kmeans = KMeans(n_clusters=args.k, random_state=0)
@@ -68,12 +73,11 @@ def main():
         if fi.endswith('.jpg'):
             num_jpgs += 1
 
+    clf = joblib.load(modelpath)
     pgbar = ProgressBar(num_jpgs)
     fnames = []
-    X = []
+    predictions = []
 
-    # Load files
-    print('Loading image files')
     for fp in fpaths:
         pgbar.display()
         im = scale_image(plt.imread(fp), 0.25) / 255
@@ -82,19 +86,11 @@ def main():
         rgb_centers = clusters.cluster_centers_
         hsv_centers = rgb_to_hsv(rgb_centers)
         features = hsv_centers[hsv_centers[:, 2].argsort()]
-        features = features.flatten()
+        X = features.reshape((1, -1))
         fnames.append(fp.name)
-        X.append(features)
+        predictions.append(clf.predict(X)[0])
         pgbar.inc()
 
-    # Run classifier
-    print()
-    print('Classifying images')
-    clf = joblib.load(modelpath)
-    predictions = clf.predict(X)
-
-    # Output results
-    outpath = Path(args.output).resolve()
     proceed = True
     if outpath.exists() and outpath.is_file():
         print(f'warning: {outpath} already exists.')

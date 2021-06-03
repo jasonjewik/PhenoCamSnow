@@ -11,10 +11,11 @@
 To run the sample model on data
 
 ```
+conda activate snow-classifier
 python run_classifier.py models/model.joblib images
 ```
 
-The results can be found in `images/results.csv`.
+The results of the above code can be found in `images/results.csv`.
 
 - The first column is the file name.
 - The second column is the timestamp.

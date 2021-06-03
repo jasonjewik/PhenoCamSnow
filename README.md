@@ -1,53 +1,40 @@
 # Snow Classifier
 
-**Goal:** To classify images taken at the [BERMS Old Jack Pine Site, Saskatchewan, Canada](https://phenocam.sr.unh.edu/webcam/sites/canadaojp/) (canadaojp).
+**Goal:** To classify images taken at the [BERMS Old Jack Pine Site, Saskatchewan, Canada](https://phenocam.sr.unh.edu/webcam/sites/canadaojp/) (canadaojp) into "snow" versus "no snow".
 
-## Training Data
+**To Do:**
 
-Training data consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (except for 1/11-1/14).
+[ ] Modularize re-used code (especially in `run_classifier.py`)
 
-(snow-classifier) PS C:\Users\jewik\GitRepos\snow-classifier> python classifier.py
-Overall accuracy: 94.89%
-No snow accuracy: 96.96%
-Snow on ground accuracy: 94.98%
-Snow on canopy accuracy: 86.36%
+## Usage
 
-Parameters:
+To run the sample model on data
 
-- nu = 0.15
-- class_weight = balanced
-- test_size = 0.33
-- 4 color clusters
+```
+python run_classifier.py models/model.joblib images
+```
 
-Increasing the number of input clusters to 8 doesn't signficantly improve accuracy.
+The results can be found in `images/results.csv`.
 
-(snow-classifier) PS C:\Users\jewik\GitRepos\snow-classifier> python classifier.py
-Overall accuracy: 94.89%
-3 Categories-->
-No snow accuracy: 99.58%
-Snow on ground accuracy: 95.40%
-Snow on canopy accuracy: 81.72%
-2 Categories-->
-No snow accuracy: 99.58%
-Snow anywhere accuracy: 97.89%
+- The first column is the file name.
+- The second column is the timestamp.
+- The third column is the predicted label, where
+  - 0 means "no snow"
+  - 1 means "has snow"
 
-Parameters:
+Using the sample data, we can re-train the classifier.
 
-- nu = 0.15
-- class_weight = balanced
-- test_size = 0.33
-- 4 color clusters and their percentage of the image
+```
+python train_classifier.py csv/sample_labels.csv csv/sample_clusters.csv
+```
 
-Interestingly, the model performs better without the ratio information.
-(snow-classifier) PS C:\Users\jewik\GitRepos\snow-classifier> python classifier.py
-Overall accuracy: 96.13%
-3 Categories-->
-No snow accuracy: 100.00%
-Snow on ground accuracy: 94.17%
-Snow on canopy accuracy: 91.01%
-2 Categories-->
-No snow accuracy: 100.00%
-Snow anywhere accuracy: 98.48%
+## Training Pipeline
 
-What if I try weighting each cluster by its ratio?
-nope, didn't work.
+Training data consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available).
+
+1. Images are labeled as one of the following options using the data labeling tool
+   - 0 = no snow
+   - 1 = snow on ground
+   - 2 = snow on canopy
+2. Images are quantized with K-Means to reduce the number of colors.
+3. A Nu SVC is trained using 67% of the labeled data and evaluated for accuracy and F1 score on the remaining 33%.

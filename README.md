@@ -4,7 +4,7 @@
 
 **To Do:**
 
-[ ] Modularize re-used code (especially in `run_classifier.py`)
+- [ ] Modularize re-used code (especially in `run_classifier.py`)
 
 ## Usage
 

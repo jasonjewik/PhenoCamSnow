@@ -5,6 +5,17 @@
 **To Do:**
 
 - [ ] Modularize re-used code (especially in `run_classifier.py`)
+- [ ] Data pre-processing needs to crop out the top part of the image (color of the sky might influence classification)
+- [ ] Write another classifier to filter out "bad images" ([for example](https://phenocam.sr.unh.edu/data/archive/canadaojp/2020/11/canadaojp_2020_11_30_175959.jpg)).
+- [ ] Output per-image color percentages (i.e., how much of this image is the first identified color, the second, etc.?)
+- [ ] Maybe we can simplify the SVM inputs to just be the lightest (highest value in HSV) identified color in the image?
+- [ ] Maybe we can also use previous classifications to influence the next? (e.g., if the previous 3 images were snow, maybe the next will also be snow)
+- [ ] Auto hyperparameter tuning
+
+**Known Issues:**
+
+- The original goal was to classify into three classes: "no snow", "snow on ground", and "snow on canopy"
+- The model does not account for pitch black images, which should be discarded
 
 ## Usage
 

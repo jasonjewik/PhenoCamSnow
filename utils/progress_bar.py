@@ -1,3 +1,8 @@
+"""
+Provides a class for displaying a progress bar. Useful for long-running tasks.
+"""
+
+# Standard library impots
 import time
 import typing
 

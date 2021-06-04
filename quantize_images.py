@@ -75,7 +75,8 @@ def main():
         pgbar.display()
 
         # Fit K-Means classifer
-        im = scale_image(plt.imread(fp), 0.25) / 255
+        im = plt.imread(fp)
+        im = preprocess_image(im, scale=0.25)
         w, h, _ = im.shape
         clusters = kmeans.fit(sample_image(im, stable=args.stable))
 
@@ -108,12 +109,12 @@ def unroll_image(im: np.ndarray) -> np.ndarray:
     return im.reshape((shape[0] * shape[1], shape[2]))
 
 
-def sample_image(im: np.ndarray, stable: bool) -> np.ndarray:
+def sample_image(im: np.ndarray, amount: int = 1000, stable: bool = False) -> np.ndarray:
     pixel_array = unroll_image(im)
     if stable:
-        result = shuffle(pixel_array, random_state=0)[:1000]
+        result = shuffle(pixel_array, random_state=0)[: amount]
     else:
-        result = shuffle(pixel_array)[:1000]
+        result = shuffle(pixel_array)[: amount]
     return result
 
 
@@ -128,11 +129,13 @@ def recreate_image(codebook: np.ndarray, labels: np.ndarray, w: int, h: int) -> 
     return image
 
 
-def scale_image(img: np.ndarray, scale: float = 0.5) -> np.ndarray:
+def preprocess_image(img: np.ndarray, scale: float = 0.5) -> np.ndarray:
+    # Crops out the sky and also the bottom bar of the image
+    img = img[300:-30, :, :]
     h, w, _ = img.shape
     new_shape = (round(w * scale), round(h * scale))
     resized = cv2.resize(img, new_shape)
-    result = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+    result = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB) / 255
     return result
 
 

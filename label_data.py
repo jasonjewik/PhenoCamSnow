@@ -19,9 +19,7 @@ from utils.progress_bar import ProgressBar
 
 def main():
     parser = ArgumentParser(description='Manual image labeling tool. \
-        For each image, pick from three possible labels: no snow, snow on \
-            ground, snow on canopy. Assumes images to be .jpg, as returned by the \
-                Phenocam download tool.')
+        Assumes images to be .jpg, as returned by the Phenocam download tool.')
     parser.add_argument('-d', '--dir', action='store', default=Path.cwd(),
                         help='the directory containing the images to be labeled')
     parser.add_argument('-o', '--output', action='store', default='./labels.csv',
@@ -37,11 +35,11 @@ def main():
         sys.exit(1)
 
     print('== Instructions ==')
-    print('1. press "1" to label the image as "no snow"')
-    print('2. press "2" to label the image as "snow on ground"')
-    print('2. press "3" to label the image as "snow on canopy"')
-    print('3. press "Q" to quit')
-    print('4. press any other key to skip the image')
+    print('1. press "1" to label the image as "bad image"')
+    print('2. press "2" to label the image as "no snow"')
+    print('3. press "3" to label the image as "snow on ground"')
+    print('4. press "4" to label the image as "snow on canopy"')
+    print('5. press "Q" to quit')
 
     results = []
     all_files = os.listdir(dirpath)
@@ -73,6 +71,8 @@ def main():
             results.append([fname, 1])
         elif key == ord('3'):
             results.append([fname, 2])
+        elif key == ord('4'):
+            results.append([fname, 3])
         elif key == ord('q'):
             print()
             break

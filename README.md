@@ -42,11 +42,12 @@ python train_classifier.py csv/sample_labels.csv csv/sample_clusters.csv
 
 ## Training Pipeline
 
-Training data consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available).
+Training data for the sample model consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available). It also includes all images for each day of Janurary 2016 and May 2016.
 
 1. Images are labeled as one of the following options using the data labeling tool
-   - 0 = no snow
-   - 1 = snow on ground
-   - 2 = snow on canopy
+   - 0 = bad image
+   - 1 = no snow
+   - 2 = snow on ground
+   - 3 = snow on canopy
 2. Images are quantized with K-Means to reduce the number of colors.
 3. A Nu SVC is trained using 67% of the labeled data and evaluated for accuracy and F1 score on the remaining 33%.

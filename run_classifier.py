@@ -21,7 +21,7 @@ from sklearn.pipeline import make_pipeline
 
 # Local application imports
 from utils.progress_bar import ProgressBar
-from quantize_images import sample_image, scale_image
+from quantize_images import sample_image, preprocess_image
 
 
 def main():
@@ -80,7 +80,7 @@ def main():
 
     for fp in fpaths:
         pgbar.display()
-        im = scale_image(plt.imread(fp), 0.25) / 255
+        im = preprocess_image(im, scale=0.25)
         w, h, _ = im.shape
         clusters = kmeans.fit(sample_image(im, stable=args.stable))
         rgb_centers = clusters.cluster_centers_

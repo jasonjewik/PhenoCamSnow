@@ -1,6 +1,6 @@
 """
 A script to train and save a Nu SVC to classify the image data from the
-canadaobj site. Classifies each image as "no snow" or "has snow".
+canadaobj site. Classifies each image as "bad image", "no snow" or, "has snow".
 """
 
 # Standard library imports
@@ -61,10 +61,8 @@ def main():
     X, y = [], []
     for label, ftrs in csv_data.values():
         X.append(ftrs)
-        if label == 0:
-            y.append(0)
-        else:
-            y.append(1)
+        if label == 2 or label == 3:  # merges the two snow classes
+            y.append(2)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
     clf = make_pipeline(

@@ -42,7 +42,7 @@ python train_classifier.py csv/sample_labels.csv csv/sample_clusters.csv
 
 ## Training Pipeline
 
-Training data for the sample model consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available). It also includes all images for each day of Janurary 2016 and May 2016.
+Training data for the sample model consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, November 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available). It also includes all images for each day of Janurary 2016 and May 2016.
 
 1. Images are labeled as one of the following options using the data labeling tool
    - 0 = bad image

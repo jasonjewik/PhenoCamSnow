@@ -15,7 +15,7 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import NuSVC
+from sklearn.svm import NuSVC, LinearSVC
 
 
 def main():
@@ -59,10 +59,18 @@ def main():
                 csv_data[fname].append(ftrs)
 
     X, y = [], []
-    for label, ftrs in csv_data.values():
+    for key, value in csv_data.items():
+        try:
+            label, ftrs = value
+        except:
+            print(
+                f'warning: {key} cannot be parsed to label/feature', file=sys.stderr)
+            continue
         X.append(ftrs)
-        if label == 2 or label == 3:  # merges the two snow classes
+        if label == 2 or label == 3:  # merges the snow classes
             y.append(2)
+        else:
+            y.append(label)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
     clf = make_pipeline(

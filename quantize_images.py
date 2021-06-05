@@ -30,21 +30,24 @@ def main():
                         help='the directory containing the images to be labeled, \
                             defaults to the current working directory')
     parser.add_argument('-o', '--output', action='store', default=None,
-                        help='the directory to put the quantized images, and the \
-                            CSV containing per image cluster centers (HSV)')
-    parser.add_argument('-n', '--name', action='store',
+                        help='the directory to put the quantized images')
+    parser.add_argument('-c', '--centers', action='store',
                         default='cluster_centers.csv',
-                        help='file name for the output file')
+                        help='file name for the output file containing per \
+                            image cluster centers')
+    parser.add_argument('-r', '--ratios', action='store',
+                        default='color_ratios.csv',
+                        help='file name for the output file containing per \
+                            image color ratios')
     parser.add_argument('--save', action='store_true', default=False,
                         help='if enabled, will save the images to the output \
                             directory')
-    parser.add_argument('-k', action='store', default=4, type=int,
-                        help='the number of clusters for KMeans, default is 4')
+    parser.add_argument('-k', action='store', default=8, type=int,
+                        help='the number of clusters for KMeans, default is 8')
     parser.add_argument('--stable', action='store_true', default=False,
                         help='if enabled, any random states will be fixed')
     args = parser.parse_args()
     inpath = Path(args.dir).resolve()
-    outpath = Path(args.output).resolve()
 
     if not inpath.exists():
         print(f'error: {inpath} does not exist', file=sys.stderr)
@@ -53,8 +56,10 @@ def main():
         print(f'error: {inpath} is not a directory', file=sys.stderr)
         sys.exit(1)
 
-    if not outpath.exists():
-        outpath.mkdir()
+    if args.save:
+        outpath = Path(args.output).resolve()
+        if not outpath.exists():
+            outpath.mkdir()
 
     fpaths = inpath.glob('*.jpg')
     if args.stable:
@@ -70,6 +75,7 @@ def main():
 
     pgbar = ProgressBar(num_jpgs)
     image_features = []
+    color_ratios = []
 
     for fp in fpaths:
         pgbar.display()
@@ -80,28 +86,40 @@ def main():
         w, h, _ = im.shape
         clusters = kmeans.fit(sample_image(im, stable=args.stable))
 
+        # Count the number of times each color appears
+        labels = kmeans.predict(unroll_image(im))
+        color_ratios = count_colors(args.k, labels)
+
         # Each image is paired with its cluster centers in HSV format,
         # sorted by V
         rgb_centers = clusters.cluster_centers_
         hsv_centers = rgb_to_hsv(rgb_centers)
         features = hsv_centers[hsv_centers[:, 2].argsort()]
-        image_features.append([fp.name, features])
+        image_features.append([fp.name, features, color_ratios])
 
         # Write the image to file, if specified
         if args.save:
-            labels = kmeans.predict(unroll_image(im))
             im = recreate_image(rgb_centers, labels, w, h)
             outfile = outpath.joinpath(fp.name)
             plt.imsave(outfile, im)
 
         pgbar.inc()
 
-    outfile = outpath.joinpath(args.name)
+    outfile = Path(args.centers).resolve()
     with open(outfile, 'a', newline='\n') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
-        for im_name, ftrs in image_features:
-            writer.writerow([im_name, *ftrs])
+        for ftrs in image_features:
+            im_name, cluster_centers, _ = ftrs
+            writer.writerow([im_name, *cluster_centers])
     print(f'Wrote per image cluster centers to {outfile}')
+
+    outfile = Path(args.ratios).resolve()
+    with open(outfile, 'a', newline='\n') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        for ftrs in image_features:
+            im_name, _, ratios = ftrs
+            writer.writerow([im_name, *ratios])
+    print(f'Wrote per image color ratios to {outfile}')
 
 
 def unroll_image(im: np.ndarray) -> np.ndarray:
@@ -127,6 +145,14 @@ def recreate_image(codebook: np.ndarray, labels: np.ndarray, w: int, h: int) -> 
             image[i][j] = codebook[labels[label_idx]]
             label_idx += 1
     return image
+
+
+def count_colors(num_colors: int, labels: np.ndarray) -> np.ndarray:
+    counts = [0] * num_colors
+    for l in labels:
+        counts[l] += 1
+    counts = np.asarray(counts) / len(labels)
+    return counts
 
 
 def preprocess_image(img: np.ndarray, scale: float = 0.5) -> np.ndarray:

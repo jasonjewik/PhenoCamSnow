@@ -33,8 +33,8 @@ def main():
     parser.add_argument('-o', '--output', action='store',
                         default='results.csv',
                         help='where to store the results')
-    parser.add_argument('-k', action='store', default=4, type=int,
-                        help='the number of clusters for KMeans, default is 4')
+    parser.add_argument('-k', action='store', default=8, type=int,
+                        help='the number of clusters for KMeans, default is 8')
     parser.add_argument('--stable', action='store_true', default=False,
                         help='if enabled, any random states will be fixed')
 

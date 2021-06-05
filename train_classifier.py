@@ -75,7 +75,7 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
     clf = make_pipeline(
         StandardScaler(),
-        NuSVC(nu=0.15, class_weight='balanced'))
+        NuSVC(nu=0.2, class_weight='balanced'))
     print('Started training')
     clf.fit(X_train, y_train)
     print('Done training')

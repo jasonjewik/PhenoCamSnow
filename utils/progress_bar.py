@@ -2,7 +2,7 @@
 Provides a class for displaying a progress bar. Useful for long-running tasks.
 """
 
-# Standard library impots
+# Standard library imports
 import time
 import typing
 

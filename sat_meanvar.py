@@ -15,9 +15,7 @@ import numpy as np
 import pandas as pd
 
 # Local application imports
-from utils.errors import eprint, warn
-from utils.progress_bar import ProgressBar
-from utils.validate_args import validate_directory, validate_file
+import utils
 
 
 def sat_meanvar(rgb_im: np.ndarray) -> [np.float64, np.float64]:
@@ -43,14 +41,14 @@ def main():
                         help='what to call the output file (must be csv)')
     args = parser.parse_args()
 
-    image_dir = validate_directory(args.images)
-    csv_file = validate_file(args.output, extension='.csv')
+    image_dir = utils.validate_directory(args.images)
+    csv_file = utils.validate_file(args.output, extension='.csv')
 
     # Compute mean, var and write to file
     names = []
     means = []
     variances = []
-    pgbar = ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
+    pgbar = utils.ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
     try:
         for im_path in image_dir.glob('*.jpg'):
             pgbar.display()
@@ -61,9 +59,9 @@ def main():
             variances.append(var)
             pgbar.inc()
             pgbar.display()
-    except Exception as e:
-        warn('Encountered error (or maybe interrupt?)')
-        warn('Writing current progress out to file')
+    except:
+        utils.warn('Encountered error (or maybe interrupt?)')
+        utils.warn('Writing current progress out to file')
 
     df = pd.DataFrame({
         'image': names,

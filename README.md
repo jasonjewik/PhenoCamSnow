@@ -14,6 +14,7 @@
 - [ ] Write out errors/warnings to log files
 - [ ] Figure out why snow classifier performs poorly on evaluation
 - [ ] Clean conda env
+- [ ] Combine all the scripts that do image feature extraction
 
 **Known Issues:**
 

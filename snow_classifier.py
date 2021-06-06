@@ -106,14 +106,14 @@ def main():
         utils.eprint('you need to specify one of train, eval, or predict')
 
 
-def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.2):
+def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
     """ Trains and saves a classification model. """
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size)
 
     clf = make_pipeline(
         StandardScaler(),
-        NuSVC(nu=0.1, class_weight='balanced')
+        NuSVC(nu=0.15, class_weight='balanced')
     )
     clf.fit(X_train, y_train)
     predictions = clf.predict(X_test)

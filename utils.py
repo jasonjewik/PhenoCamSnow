@@ -56,7 +56,7 @@ def validate_file(fname: str, extension: str, panic_on_overwrite: bool = True) -
                 if overwrite.lower() == 'q':
                     warn('quit', exit=1)
                 else:
-                    new_csvfile = input('new csv file: ')
+                    fname = input('new csv file: ')
             else:
                 break
         else:

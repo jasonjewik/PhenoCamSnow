@@ -6,6 +6,7 @@ A script for computing the mean and variance of an image's saturation.
 from argparse import ArgumentParser
 from pathlib import Path
 import sys
+import typing
 
 # Third party imports
 import cv2
@@ -16,7 +17,7 @@ import pandas as pd
 # Local application imports
 from utils.errors import eprint, warn
 from utils.progress_bar import ProgressBar
-from utils.validate_args import validate_csv, validate_directory
+from utils.validate_args import validate_directory, validate_file
 
 
 def sat_meanvar(rgb_im: np.ndarray) -> [np.float64, np.float64]:
@@ -25,9 +26,7 @@ def sat_meanvar(rgb_im: np.ndarray) -> [np.float64, np.float64]:
         between the grayscale image and the V part of the HSV image. """
     hsv_im = cv2.cvtColor(rgb_im, cv2.COLOR_BGR2HSV)
     s_im = hsv_im[:, :, 1]
-    mean = np.mean(s_im)
-    var = np.var(s_im)
-    return [mean, var]
+    return [np.mean(s_im), np.var(s_im)]
 
 
 def main():
@@ -36,12 +35,16 @@ def main():
         variance for a folder of images.')
     parser.add_argument('images', action='store',
                         help='path to the image folder, images must be jpg')
+    parser.add_argument('--num', action='store', type=int,
+                        help='the number of pixels to sample for computating \
+                            the mean and variance of image saturation, \
+                                defaults to all pixels')
     parser.add_argument('-o', '--output', action='store', default='output.csv',
-                        help='what to call the output file (must be CSV)')
+                        help='what to call the output file (must be csv)')
     args = parser.parse_args()
 
     image_dir = validate_directory(args.images)
-    csv_file = validate_csv(args.output)
+    csv_file = validate_file(args.output, extension='.csv')
 
     # Compute mean, var and write to file
     names = []
@@ -52,8 +55,8 @@ def main():
         for im_path in image_dir.glob('*.jpg'):
             pgbar.display()
             im = plt.imread(im_path)
-            mean, var = sat_meanvar(im)
             names.append(im_path.name)
+            mean, var = sat_meanvar(im)
             means.append(mean)
             variances.append(var)
             pgbar.inc()

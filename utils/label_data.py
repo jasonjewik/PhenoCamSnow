@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 # Local application imports
 from utils.errors import eprint, warn
 from utils.progress_bar import ProgressBar
-from utils.validate_args import validate_csv, validate_directory
+from utils.validate_args import validate_directory, validate_file
 
 
 def main():
@@ -25,14 +25,14 @@ def main():
     parser.add_argument('dir', action='store', default=Path.cwd(),
                         help='the directory containing the images to be labeled')
     parser.add_argument('-o', '--output', action='store', default='./labels.csv',
-                        help='the CSV file to put the labels, default is labels.csv')
+                        help='the csv file to put the labels, default is labels.csv')
     parser.add_argument('-t', '--type', action='store', default='snow',
-                        help='whether to label the images by contrast or by \
+                        help='whether to label the images by saturation or by \
                             snow, defaults to snow')
     args = parser.parse_args()
     img_dir = validate_directory(args.dir)
-    out_csv = validate_csv(args.output)
-    valid_types = ['snow', 'contrast']
+    out_csv = validate_file(args.output, extension='.csv')
+    valid_types = ['snow', 'saturation']
     if args.type not in valid_types:
         eprint(f'{args.type} is not a valid label type', exit=None)
         eprint(f'pick from {valid_types}')
@@ -45,8 +45,8 @@ def main():
         print('3. press "3" to label the image as "snow on canopy"')
         print('4. press any other key to skip')
     else:
-        print('1. press "1" to label the image as "high contrast"')
-        print('2. press "2" to label the image as "low contrast"')
+        print('1. press "1" to label the image as "high saturation"')
+        print('2. press "2" to label the image as "low saturation"')
         print('3. press any other key to skip')
     print('press "q" while the image window is active to quit')
 

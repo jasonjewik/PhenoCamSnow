@@ -6,7 +6,7 @@
 
 - [ ] Modularize re-used code (especially in `run_classifier.py`)
 - [ ] Data pre-processing needs to crop out the top part of the image (color of the sky might influence classification)
-- [ ] Write another classifier to filter out "bad images" ([for example](https://phenocam.sr.unh.edu/data/archive/canadaojp/2020/11/canadaojp_2020_11_30_175959.jpg)).
+- [x] Write another classifier to filter out "bad images" ([for example](https://phenocam.sr.unh.edu/data/archive/canadaojp/2020/11/canadaojp_2020_11_30_175959.jpg)).
 - [ ] Output per-image color percentages (i.e., how much of this image is the first identified color, the second, etc.?)
 - [ ] Maybe we can simplify the SVM inputs to just be the lightest (highest value in HSV) identified color in the image?
 - [ ] Maybe we can also use previous classifications to influence the next? (e.g., if the previous 3 images were snow, maybe the next will also be snow)
@@ -15,30 +15,20 @@
 **Known Issues:**
 
 - The original goal was to classify into three classes: "no snow", "snow on ground", and "snow on canopy"
-- The model does not account for pitch black images, which should be discarded
+- ~~The model does not account for pitch black images, which should be discarded~~
 
 ## Usage
 
-To run the sample model on data
+There are two models. The first one is `sat_classifier.py`, which determines whether an image is "good" or "bad" quality. In other words, could a human reliably identify this image as having snow or not? The model classifies images according to the mean and variance of their saturation (computed by converting from RGB to HSV color space). The model `sat_clf.joblib` was trained using the data in `csv/sat_clf`. This model's predictions on the sample images can be found in `images/sat_predictions.csv`, where 0 means "image is good/saturated" and 1 means "image is bad/undersaturated".
+
+To run the sample model on the sample images,
 
 ```
 conda activate snow-classifier
-python run_classifier.py models/model.joblib images
+python sat_classifier.py --predict models/sat_clf.joblib --images images --output images/sat_predictions.csv
 ```
 
-The results of the above code can be found in `images/results.csv`.
-
-- The first column is the file name.
-- The second column is the timestamp.
-- The third column is the predicted label, where
-  - 0 means "no snow"
-  - 1 means "has snow"
-
-Using the sample data, we can re-train the classifier.
-
-```
-python train_classifier.py csv/sample_labels.csv csv/sample_clusters.csv
-```
+See `sat_classifier.py` for more info about how to use this model.
 
 ## Training Pipeline
 

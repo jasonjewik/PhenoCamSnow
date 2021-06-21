@@ -4,13 +4,13 @@ A script for labeling image data from the canadaobj site.
 
 # Standard library imports
 from argparse import ArgumentParser
-import csv
 from pathlib import Path
 import sys
 
 # Third party imports
 import cv2
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Local application imports
 import utils
@@ -21,15 +21,24 @@ def main():
     parser = ArgumentParser(description='Manual image labeling tool. \
         Assumes images to be .jpg, as returned by the Phenocam download tool.')
     parser.add_argument('dir', action='store', default=Path.cwd(),
-                        help='the directory containing the images to be labeled')
-    parser.add_argument('-o', '--output', action='store', default='./labels.csv',
-                        help='the csv file to put the labels, default is labels.csv')
+                        help='the directory containing the images')
+    parser.add_argument('-l', '--labels', action='store',
+                        help='the csv file containing the labels')
+    parser.add_argument('-o', '--output', action='store',
+                        help='the csv file to put the labels')
     parser.add_argument('-t', '--type', action='store', default='snow',
                         help='whether to label the images by saturation or by \
                             snow, defaults to snow')
     args = parser.parse_args()
+    if args.labels is None and args.output is None:
+        utils.eprint('please specify labels, output, or both')
+
     img_dir = utils.validate_directory(args.dir)
     out_csv = utils.validate_file(args.output, extension='.csv')
+    if args.labels is not None:
+        labels_csv = utils.validate_file(
+            args.labels, extension='.csv', panic_on_overwrite=False)
+        labels_df = pd.read_csv(labels_csv)
     valid_types = ['snow', 'saturation']
     if args.type not in valid_types:
         utils.eprint(f'{args.type} is not a valid label type', exit=None)
@@ -63,6 +72,17 @@ def main():
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         h, w, _ = img.shape
         img = cv2.resize(img, (w // 4, h // 4))
+        if args.labels is not None:
+            label = labels_df[labels_df['image'] == fname]['label'].to_numpy()
+            if len(label) == 0:
+                caption = 'bad image'
+            elif label[0] == 0:
+                caption = 'no snow'
+            elif label[0] == 1:
+                caption = 'snow'
+            img = cv2.putText(img, caption, (w // 8, h // 8),
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2,
+                              cv2.LINE_AA)
         cv2.imshow('window', img)
         key = cv2.waitKey(0)
         if key in valid_keys:
@@ -78,11 +98,11 @@ def main():
 
     cv2.destroyWindow('window')
 
-    with open(args.output, 'w', newline='\n') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(['image', 'label'])
-        for r in results:
-            writer.writerow(r)
+    results_df = pd.DataFrame(results).rename(columns={0: 'image', 1: 'label'})
+    if args.labels is not None:
+        labels_df = labels_df.rename(columns={'label': 'predicted'})
+        results_df = pd.merge(results_df, labels_df)
+    results_df.to_csv(args.output, index=False)
     print(f'Wrote results to {args.output}')
 
 

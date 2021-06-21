@@ -12,9 +12,11 @@
 - [ ] Maybe we can also use previous classifications to influence the next? (e.g., if the previous 3 images were snow, maybe the next will also be snow)
 - [ ] Auto hyperparameter tuning
 - [ ] Write out errors/warnings to log files
-- [ ] Figure out why snow classifier performs poorly on evaluation
+- [x] ~~Figure out why snow classifier performs poorly on evaluation~~ It does well enough
 - [ ] Clean conda env
 - [ ] Combine all the scripts that do image feature extraction
+- [ ] Remove the option to select the number of image clusters
+- [ ] Clean data labeling code since it now allows for checking of labels too
 
 **Known Issues:**
 

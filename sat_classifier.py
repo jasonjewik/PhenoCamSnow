@@ -9,7 +9,6 @@ from argparse import ArgumentParser
 import joblib
 import pandas as pd
 from pathlib import Path
-import sys
 
 # Third party imports
 import matplotlib.pyplot as plt

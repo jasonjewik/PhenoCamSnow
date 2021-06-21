@@ -8,7 +8,6 @@ from argparse import ArgumentParser
 import csv
 import joblib
 from pathlib import Path
-import sys
 
 # Third party imports
 import matplotlib.pyplot as plt
@@ -99,7 +98,10 @@ def main():
         outpath = utils.validate_file(args.output, extension='.csv')
 
         model = joblib.load(model_path)
-        df = predict(model, image_dirs[0], args.k)
+        df = None
+        for direc in image_dirs:
+            temp_df = predict(model, args.k, image_dir=direc)
+            df = temp_df if df is None else df.append(temp_df)
         df.to_csv(outpath, index=False)
 
     else:
@@ -113,7 +115,7 @@ def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
 
     clf = make_pipeline(
         StandardScaler(),
-        NuSVC(nu=0.15, class_weight='balanced')
+        NuSVC(nu=0.5, class_weight='balanced')
     )
     clf.fit(X_train, y_train)
     predictions = clf.predict(X_test)
@@ -174,30 +176,46 @@ def evaluate(model: NuSVC, image_dirs: [Path], labels: pd.DataFrame, k: int, out
         df.to_csv(output, index=False)
 
 
-def predict(model: NuSVC, image_dir: Path, k: int) -> pd.DataFrame:
-    """ Output predicted class for each image in the given directory. """
-    im_names = []
-    features = []
-    pgbar = utils.ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
+def predict(model: NuSVC, k: int, image_dir: Path = None, single_image: Path = None) -> pd.DataFrame:
+    """ Output predicted class for each image in the given directory, or for
+        a single image. """
     kmeans = KMeans(n_clusters=k)
 
-    print('processing images')
-    for fp in image_dir.glob('*.jpg'):
-        pgbar.display()
-        im = plt.imread(fp)
-        im_names.append(fp.name)
+    if image_dir is not None:
+        im_names = []
+        features = []
+        pgbar = utils.ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
+
+        print('processing images')
+        for fp in image_dir.glob('*.jpg'):
+            pgbar.display()
+            im = plt.imread(fp)
+            im_names.append(fp.name)
+            hsv_centers = quantize(kmeans, im)[1]
+            h, w = hsv_centers.shape
+            flattened_hsv_centers = hsv_centers.reshape((h * w))
+            features.append(flattened_hsv_centers)
+            pgbar.inc()
+            pgbar.display()
+
+        predictions = model.predict(features)
+        df = pd.DataFrame({
+            'image': im_names,
+            'label': predictions
+        })
+    elif single_image is not None:
+        im = plt.imread(single_image)
         hsv_centers = quantize(kmeans, im)[1]
         h, w = hsv_centers.shape
         flattened_hsv_centers = hsv_centers.reshape((h * w))
-        features.append(flattened_hsv_centers)
-        pgbar.inc()
-        pgbar.display()
-
-    predictions = model.predict(features)
-    df = pd.DataFrame({
-        'image': im_names,
-        'label': predictions
-    })
+        features = flattened_hsv_centers.reshape((1, -1))
+        prediction = model.predict(features)
+        df = pd.DataFrame({
+            'image': single_image.name,
+            'label': prediction
+        })
+    else:
+        utils.eprint('specify a directory or an image')
     return df
 
 

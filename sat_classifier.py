@@ -5,10 +5,11 @@ lighting conditions) from "good images".
 """
 
 # Standard library imports
-from argparse import ArgumentParser
+import argparse
 import joblib
 import pandas as pd
 from pathlib import Path
+import typing
 
 # Third party imports
 import matplotlib.pyplot as plt
@@ -25,14 +26,14 @@ import utils
 
 
 def main():
-    parser = ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='trains/evaluates/runs a saturation classifier')
     parser.add_argument('--train', action='store_true', default=False,
                         help='train a new model: meanvar, labels, and output \
                             must be given')
     parser.add_argument('--eval', action='store', metavar='MODEL',
-                        help='evaluates the given model: labels, images must \
-                            be given; output is ignored')
+                        help='evaluates the given model: labels, \
+                            image meanvars must be given; output is ignored')
     parser.add_argument('--predict', action='store', metavar='MODEL',
                         help='classifies images using the given model: images \
                             and output must be given')
@@ -63,6 +64,9 @@ def main():
 
         meanvar_df = pd.read_csv(meanvar_csv)
         label_df = pd.read_csv(label_csv)
+        label_df['label'] = label_df['label'].apply(
+            lambda x: 0 if x == 0 else 1)
+
         joint_df = meanvar_df.merge(label_df)
         X = joint_df[['mean', 'variance']].to_numpy()
         y = joint_df['label'].to_numpy()
@@ -74,12 +78,14 @@ def main():
             args.eval, extension='.joblib', panic_on_overwrite=False)
         label_csv = utils.validate_file(
             args.labels, extension='.csv', panic_on_overwrite=False)
-        images_dir = utils.validate_directory(args.images)
+        meanvar_csv = utils.validate_file(
+            args.meanvar, extension='.csv', panic_on_overwrite=False)
 
         model = joblib.load(model_path)
         label_df = pd.read_csv(label_csv)
+        meanvar_df = pd.read_csv(meanvar_csv)
 
-        evaluate(model, images_dir, label_df)
+        evaluate(model, meanvar_df, label_df)
 
     elif args.predict is not None:
         model_path = utils.validate_file(
@@ -100,10 +106,7 @@ def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size)
 
-    clf = make_pipeline(
-        StandardScaler(),
-        LinearSVC()
-    )
+    clf = LinearSVC()
     clf.fit(X_train, y_train)
     predictions = clf.predict(X_test)
     acc = accuracy_score(y_test, predictions)
@@ -117,27 +120,13 @@ def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
     print(f'Saved model to {outpath}')
 
 
-def evaluate(model: LinearSVC, image_dir: Path, labels: pd.DataFrame):
+def evaluate(model: LinearSVC, meanvars: pd.DataFrame, labels: pd.DataFrame):
     """ Evaluates the given classification model. """
-    meanvars = []
-    indices_to_drop = []
-    pgbar = utils.ProgressBar(len(labels))
-
-    print('processing images')
-    for idx, im_name in enumerate(labels['image']):
-        pgbar.display()
-        im_path = image_dir.joinpath(im_name)
-        if not im_path.exists():
-            utils.warn(f'{im_path} does not exist, skipping')
-            indices_to_drop.append(idx)
-        else:
-            im = plt.imread(im_path)
-            meanvars.append(sat_meanvar(im))
-        pgbar.inc()
-        pgbar.display()
-
-    y_true = labels['label'].drop(indices_to_drop)
-    y_pred = model.predict(meanvars)
+    joint_df = pd.merge(meanvars, labels, on='image')
+    X = joint_df[['mean', 'variance']].to_numpy()
+    y_true = joint_df['label'].to_numpy()
+    y_true = np.where(y_true == 0, 0, 1)
+    y_pred = model.predict(X)
     acc = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred)
     print(f'Accuracy: {acc}')

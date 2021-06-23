@@ -3,7 +3,7 @@ A script for labeling image data from the canadaobj site.
 """
 
 # Standard library imports
-from argparse import ArgumentParser
+import argparse
 from pathlib import Path
 import sys
 
@@ -18,7 +18,7 @@ import utils
 
 def main():
     # Parse and validate arguments
-    parser = ArgumentParser(description='Manual image labeling tool. \
+    parser = argparse.ArgumentParser(description='Manual image labeling tool. \
         Assumes images to be .jpg, as returned by the Phenocam download tool.')
     parser.add_argument('dir', action='store', default=Path.cwd(),
                         help='the directory containing the images')
@@ -26,43 +26,36 @@ def main():
                         help='the csv file containing the labels')
     parser.add_argument('-o', '--output', action='store',
                         help='the csv file to put the labels')
-    parser.add_argument('-t', '--type', action='store', default='snow',
-                        help='whether to label the images by saturation or by \
-                            snow, defaults to snow')
     args = parser.parse_args()
-    if args.labels is None and args.output is None:
-        utils.eprint('please specify labels, output, or both')
+    if args.labels is not None and args.output is not None:
+        utils.eprint('please specify labels if checking or output if labeling')
 
     img_dir = utils.validate_directory(args.dir)
-    out_csv = utils.validate_file(args.output, extension='.csv')
     if args.labels is not None:
         labels_csv = utils.validate_file(
             args.labels, extension='.csv', panic_on_overwrite=False)
         labels_df = pd.read_csv(labels_csv)
-    valid_types = ['snow', 'saturation']
-    if args.type not in valid_types:
-        utils.eprint(f'{args.type} is not a valid label type', exit=None)
-        utils.eprint(f'pick from {valid_types}')
+    if args.output is not None:
+        out_csv = utils.validate_file(args.output, extension='.csv')
 
-    # Label images
-    print('== Instructions ==')
-    if args.type is 'snow':
-        print('1. press "1" to label the image as "no snow"')
-        print('2. press "2" to label the image as "snow on ground"')
-        print('3. press "3" to label the image as "snow on canopy"')
-        print('4. press the space bar to skip')
-    else:
-        print('1. press "1" to label the image as "high saturation"')
-        print('2. press "2" to label the image as "low saturation"')
-        print('3. press the space bar to skip')
-    print('press "q" while the image window is active to quit')
-
-    results = []
+    # Label/verify images
     num_jpgs = len(sorted(img_dir.glob('*.jpg')))
     pgbar = utils.ProgressBar(num_jpgs, display_fraction=True)
-    cv2.namedWindow('window')
-    valid_keys = '1,2,3,4,5,6,7,8,9,0'.split(sep=',')
-    valid_keys = list(map(ord, valid_keys))
+    print('### Instructions ###')
+    if args.labels is not None:
+        print('1. press any key to advance')
+    if args.output is not None:
+        print('1. press "1" for "no snow"')
+        print('2. press "2" for "snow on ground"')
+        print('3. press "3" for "snow on canopy"')
+        print('4. press "0" for "bad image"')
+        print('5. press "q" to quit')
+        print('6. press any other key to skip')
+
+        results = []
+        cv2.namedWindow('window')
+        valid_keys = ['0', '1', '2', '3']
+        valid_keys = list(map(ord, valid_keys))
 
     for fp in img_dir.glob('*.jpg'):
         pgbar.display()
@@ -73,23 +66,22 @@ def main():
         h, w, _ = img.shape
         img = cv2.resize(img, (w // 4, h // 4))
         if args.labels is not None:
-            label = labels_df[labels_df['image'] == fname]['label'].to_numpy()
-            if len(label) == 0:
+            label = labels_df.query(f'image == "{fname}"')['label'].to_numpy()
+            if label[0] == 0:
                 caption = 'bad image'
-            elif label[0] == 0:
-                caption = 'no snow'
             elif label[0] == 1:
+                caption = 'no snow'
+            elif label[0] == 2:
                 caption = 'snow'
+            # elif label[0] == 3:
+            #     caption = 'snow on canopy'
             img = cv2.putText(img, caption, (w // 8, h // 8),
                               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2,
                               cv2.LINE_AA)
         cv2.imshow('window', img)
         key = cv2.waitKey(0)
-        if key in valid_keys:
-            ikey = int(chr(key)) - 1  # re-index at 0
-            if ikey < 0:  # wraps around to max value if underflow
-                ikey = 9
-            results.append([fname, ikey])
+        if args.output is not None and key in valid_keys:
+            results.append([fname, int(chr(key))])
         elif key == ord('q'):
             print()
             break
@@ -98,12 +90,11 @@ def main():
 
     cv2.destroyWindow('window')
 
-    results_df = pd.DataFrame(results).rename(columns={0: 'image', 1: 'label'})
-    if args.labels is not None:
-        labels_df = labels_df.rename(columns={'label': 'predicted'})
-        results_df = pd.merge(results_df, labels_df)
-    results_df.to_csv(args.output, index=False)
-    print(f'Wrote results to {args.output}')
+    if args.output is not None:
+        results_df = pd.DataFrame(results).rename(
+            columns={0: 'image', 1: 'label'})
+        results_df.to_csv(args.output, index=False)
+        print(f'Wrote results to {args.output}')
 
 
 if __name__ == '__main__':

@@ -57,9 +57,9 @@ def main():
     pgbar = utils.ProgressBar(len(sat_df))
     for row in sat_df.itertuples():
         pgbar.display()
-        if row.label == 0:
+        if row.label == 1:
             temp_df = snow_classifier.predict(
-                snow_model, 4, single_image=row.image)
+                snow_model, single_image=row.image)
             snow_df = temp_df if snow_df is None else snow_df.append(temp_df)
         pgbar.inc()
         pgbar.display()

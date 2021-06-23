@@ -4,10 +4,11 @@ canadaobj site. Classifies each image as "no snow" or "has snow".
 """
 
 # Standard library imports
-from argparse import ArgumentParser
+import argparse
 import csv
 import joblib
 from pathlib import Path
+import typing
 
 # Third party imports
 import matplotlib.pyplot as plt
@@ -17,31 +18,28 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 from sklearn.svm import NuSVC
 
 # Local application imports
 import utils
-from quantize_images import preprocess, sample, quantize
+from quantize_images import preprocess, quantize
 
 
 def main():
-    parser = ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='trains/evaluates/runs a snow classifier')
     parser.add_argument('--train', action='store_true', default=False,
                         help='train a new model: labels, features, and output \
                             must be given; k is optional')
-    parser.add_argument('--eval', action='store', metavar='MODEL',
-                        help='evaluates the given model: labels, images \
-                            must be given; output, k optional')
-    parser.add_argument('--predict', action='store', metavar='MODEL',
+    parser.add_argument('--eval', action='store', metavar='model',
+                        help='evaluates the given model: labels, \
+                            features must be given; output, k optional')
+    parser.add_argument('--predict', action='store', metavar='model',
                         help='classifies images using the given model: \
                             images and output must be given; k is optional')
     parser.add_argument('--features', action='store',
                         help='the csv file containing the image features (see \
                             quantize_images.py)')
-    parser.add_argument('-k', action='store', default=4, type=int,
-                        help='the number of clusters for KMeans, default is 4')
     parser.add_argument('--labels', action='store',
                         help='the csv file containing the image labels (must \
                             match the format returned by label_data.py')
@@ -67,16 +65,13 @@ def main():
         features_df = pd.read_csv(features_csv)
         label_df = pd.read_csv(label_csv)
         joint_df = features_df.merge(label_df)
-        columns = [f'c{i}_h' for i in range(args.k)]
-        sats = [f'c{i}_s' for i in range(args.k)]
-        vals = [f'c{i}_v' for i in range(args.k)]
-        columns.extend(sats)
-        columns.extend(vals)
-        columns.sort()
+        columns = ['h0', 'h1', 'h2', 'h3',
+                   's0', 's1', 's2', 's3',
+                   'v0', 'v1', 'v2', 'v3']
+        #    'r0', 'r1', 'r2', 'r3']
         X = joint_df[columns].to_numpy()
         y = joint_df['label'].to_numpy()
-        y = binarize(y)
-
+        y = np.where(y == 3, 2, y)
         train(X, y, args.output)
 
     elif args.eval is not None:
@@ -84,12 +79,21 @@ def main():
             args.eval, extension='.joblib', panic_on_overwrite=False)
         label_csv = utils.validate_file(
             args.labels, extension='.csv', panic_on_overwrite=False)
-        image_dirs = [utils.validate_directory(direc) for direc in args.images]
+        features_csv = utils.validate_file(
+            args.features, extension='.csv', panic_on_overwrite=False)
 
         model = joblib.load(model_path)
+        features_df = pd.read_csv(features_csv)
         label_df = pd.read_csv(label_csv)
-
-        evaluate(model, image_dirs, label_df, args.k, args.output)
+        joint_df = features_df.merge(label_df)
+        columns = ['h0', 'h1', 'h2', 'h3',
+                   's0', 's1', 's2', 's3',
+                   'v0', 'v1', 'v2', 'v3']
+        #    'r0', 'r1', 'r2', 'r3']
+        X = joint_df[columns].to_numpy()
+        y_true = joint_df['label'].to_numpy()
+        y_true = np.where(y_true == 3, 2, y_true)
+        evaluate(model, X, y_true)
 
     elif args.predict is not None:
         model_path = utils.validate_file(
@@ -100,9 +104,11 @@ def main():
         model = joblib.load(model_path)
         df = None
         for direc in image_dirs:
-            temp_df = predict(model, args.k, image_dir=direc)
+            temp_df = predict(model, image_dir=direc)
             df = temp_df if df is None else df.append(temp_df)
         df.to_csv(outpath, index=False)
+        print('Predictions Preview:')
+        print(df)
 
     else:
         utils.eprint('you need to specify one of train, eval, or predict')
@@ -113,14 +119,11 @@ def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size)
 
-    clf = make_pipeline(
-        StandardScaler(),
-        NuSVC(nu=0.5, class_weight='balanced')
-    )
+    clf = NuSVC(nu=0.2, class_weight='balanced')
     clf.fit(X_train, y_train)
     predictions = clf.predict(X_test)
     acc = accuracy_score(y_test, predictions)
-    f1 = f1_score(y_test, predictions)
+    f1 = f1_score(y_test, predictions, average=None)
     print(f'Accuracy Score: {acc}')
     print(f'F1 Score: {f1}')
 
@@ -130,86 +133,45 @@ def train(X: np.ndarray, y: np.ndarray, outpath: str, test_size: float = 0.33):
     print(f'Saved model to {outpath}')
 
 
-def evaluate(model: NuSVC, image_dirs: [Path], labels: pd.DataFrame, k: int, output: str):
+def evaluate(model: NuSVC, X: np.ndarray, y_true: np.ndarray):
     """ Evaluates the given classification model. """
-    features = []
-    indices_to_drop = []
-    pgbar = utils.ProgressBar(len(labels))
-    kmeans = KMeans(n_clusters=k)
-
-    print('processing images')
-    for idx, im_name in enumerate(labels['image']):
-        pgbar.display()
-        im_path = None
-        for direc in image_dirs:
-            temp_path = direc.joinpath(im_name)
-            if temp_path.exists():
-                im_path = temp_path
-                break
-        if im_path is None:
-            utils.warn(f'{im_name} could not be found, skipping')
-            indices_to_drop.append(idx)
-        else:
-            im = plt.imread(im_path)
-            im = preprocess(im, scale=0.25)
-            hsv_centers = quantize(kmeans, im)[1]
-            h, w = hsv_centers.shape
-            flattened_hsv_centers = hsv_centers.reshape((h * w))
-            features.append(flattened_hsv_centers)
-        pgbar.inc()
-        pgbar.display()
-
-    y_true = labels['label'].drop(indices_to_drop)
-    y_true = binarize(y_true)
-    y_pred = model.predict(features)
+    y_pred = model.predict(X)
     acc = accuracy_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average=None)
     print(f'Accuracy: {acc}')
     print(f'F1 Score: {f1}')
 
-    if output is not None:
-        output = utils.validate_file(output, extension='.csv')
-        df = pd.DataFrame({
-            'image': labels['image'].drop(indices_to_drop),
-            'label': y_pred
-        })
-        df.to_csv(output, index=False)
 
-
-def predict(model: NuSVC, k: int, image_dir: Path = None, single_image: Path = None) -> pd.DataFrame:
+def predict(model: NuSVC, image_dir: Path = None, single_image: Path = None) -> pd.DataFrame:
     """ Output predicted class for each image in the given directory, or for
         a single image. """
-    kmeans = KMeans(n_clusters=k)
+    kmeans = KMeans(n_clusters=4)
 
     if image_dir is not None:
         im_names = []
-        features = []
+        X = []
         pgbar = utils.ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
 
         print('processing images')
         for fp in image_dir.glob('*.jpg'):
             pgbar.display()
             im = plt.imread(fp)
+            im = preprocess(im, scale=0.25)
             im_names.append(fp.name)
-            hsv_centers = quantize(kmeans, im)[1]
-            h, w = hsv_centers.shape
-            flattened_hsv_centers = hsv_centers.reshape((h * w))
-            features.append(flattened_hsv_centers)
+            ftrs = quantize(kmeans, im)
+            X.append(ftrs.T.flatten())
             pgbar.inc()
             pgbar.display()
-
-        predictions = model.predict(features)
+        X = np.array(X)
+        predictions = model.predict(X)
         df = pd.DataFrame({
             'image': im_names,
             'label': predictions
         })
     elif single_image is not None:
         im = plt.imread(single_image)
-        hsv_centers = quantize(kmeans, im)[1]
-        h, w = hsv_centers.shape
-        flattened_hsv_centers = hsv_centers.reshape((h * w))
-        features = flattened_hsv_centers.reshape((1, -1))
-        prediction = model.predict(features)
+        X = quantize(kmeans, im).T.flatten().reshape((1, -1))
+        prediction = model.predict(X)
         df = pd.DataFrame({
             'image': single_image.name,
             'label': prediction
@@ -217,13 +179,6 @@ def predict(model: NuSVC, k: int, image_dir: Path = None, single_image: Path = N
     else:
         utils.eprint('specify a directory or an image')
     return df
-
-
-def binarize(labels: np.ndarray) -> np.ndarray:
-    """ Simplifies labels so that the first class stays the same, and the rest
-        are combined into one class. """
-    binarized_labels = np.where(labels == 0, labels, 1)
-    return binarized_labels
 
 
 if __name__ == '__main__':

@@ -31,34 +31,34 @@ def main():
     # Parse and validate arguments
     parser = ArgumentParser(description='Computes the absolute gravy mean and \
         variance for a folder of images.')
-    parser.add_argument('images', action='store',
-                        help='path to the image folder, images must be jpg')
-    parser.add_argument('--num', action='store', type=int,
-                        help='the number of pixels to sample for computating \
-                            the mean and variance of image saturation, \
-                                defaults to all pixels')
+    parser.add_argument('images', action='store', nargs='+',
+                        help='path to the image folders, images must be jpg')
     parser.add_argument('-o', '--output', action='store', default='output.csv',
                         help='what to call the output file (must be csv)')
     args = parser.parse_args()
 
-    image_dir = utils.validate_directory(args.images)
+    image_dirs = [utils.validate_directory(direc) for direc in args.images]
     csv_file = utils.validate_file(args.output, extension='.csv')
 
     # Compute mean, var and write to file
     names = []
     means = []
     variances = []
-    pgbar = utils.ProgressBar(len(sorted(image_dir.glob('*.jpg'))))
+    num_images = 0
+    for direc in image_dirs:
+        num_images += len(sorted(direc.glob('*.jpg')))
+    pgbar = utils.ProgressBar(num_images)
     try:
-        for im_path in image_dir.glob('*.jpg'):
-            pgbar.display()
-            im = plt.imread(im_path)
-            names.append(im_path.name)
-            mean, var = sat_meanvar(im)
-            means.append(mean)
-            variances.append(var)
-            pgbar.inc()
-            pgbar.display()
+        for direc in image_dirs:
+            for im_path in direc.glob('*.jpg'):
+                pgbar.display()
+                im = plt.imread(im_path)
+                names.append(im_path.name)
+                mean, var = sat_meanvar(im)
+                means.append(mean)
+                variances.append(var)
+                pgbar.inc()
+                pgbar.display()
     except:
         utils.warn('Encountered error (or maybe interrupt?)')
         utils.warn('Writing current progress out to file')

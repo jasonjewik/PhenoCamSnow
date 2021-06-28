@@ -91,6 +91,8 @@ def quantize(kmeans: KMeans, im: np.ndarray):
     hsv_centers = rgb_to_hsv(rgb_centers)
     hsv_centers = hsv_centers[hsv_centers[:, 2].argsort()]
 
+    """ Unused code. Removing this massively speeds up the quantization.
+        Plus, the classifier doesn't use ratio information anyway. """
     # labels = kmeans.predict(unrolled_im)
     # counts = [0] * kmeans.n_clusters
     # for i in range(kmeans.n_clusters):

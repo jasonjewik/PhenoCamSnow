@@ -30,13 +30,13 @@ def main():
         description='trains/evaluates/runs a snow classifier')
     parser.add_argument('--train', action='store_true', default=False,
                         help='train a new model: labels, features, and output \
-                            must be given; k is optional')
-    parser.add_argument('--eval', action='store', metavar='model',
+                            must be given')
+    parser.add_argument('--eval', action='store', metavar='MODEL',
                         help='evaluates the given model: labels, \
-                            features must be given; output, k optional')
-    parser.add_argument('--predict', action='store', metavar='model',
+                            features must be given')
+    parser.add_argument('--predict', action='store', metavar='MODEL',
                         help='classifies images using the given model: \
-                            images and output must be given; k is optional')
+                            images and output must be given')
     parser.add_argument('--features', action='store',
                         help='the csv file containing the image features (see \
                             quantize_images.py)')
@@ -89,6 +89,7 @@ def main():
         columns = ['h0', 'h1', 'h2', 'h3',
                    's0', 's1', 's2', 's3',
                    'v0', 'v1', 'v2', 'v3']
+        """ The unusued ratio information: """
         #    'r0', 'r1', 'r2', 'r3']
         X = joint_df[columns].to_numpy()
         y_true = joint_df['label'].to_numpy()

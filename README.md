@@ -4,38 +4,39 @@
 
 **To Do:**
 
-- [ ] Modularize re-used code (especially in `run_classifier.py`)
+- [x] Modularize re-used code (especially in `run_classifier.py`)
+- [x] Data pre-processing needs to crop out the ~~top part of the image (color of the sky might influence classification)~~ bottom part of the image (no need to sample the black bar)
+- [x] Write another classifier to filter out "bad images" ([for example](https://phenocam.sr.unh.edu/data/archive/canadaojp/2020/11/canadaojp_2020_11_30_175959.jpg)).
+- [x] Output per-image color percentages (i.e., how much of this image is the first identified color, the second, etc.?)
+- [ ] ~~Maybe we can simplify the SVM inputs to just be the lightest (highest value in HSV) identified color in the image?~~
+- [ ] Maybe we can also use previous classifications to influence the next? (e.g., if the previous 3 images were snow, maybe the next will also be snow)
+- [ ] Auto hyperparameter tuning
+- [ ] Write out errors/warnings to log files
+- [x] ~~Figure out why snow classifier performs poorly on evaluation~~ It does well enough
+- [ ] Clean conda env
+- [ ] ~~Combine all the scripts that do image feature extraction~~
+- [x] Remove the option to select the number of image clusters
+- [x] Clean data labeling code since it now allows for checking of labels too
+
+**Known Issues:**
+
+- The original goal was to classify into three classes: "no snow", "snow on ground", and "snow on canopy"
 
 ## Usage
 
-To run the sample model on data
+The following lines will run the sample classifier on the sample images.
 
 ```
-conda activate snow-classifier
-python run_classifier.py models/model.joblib images
+$ conda activate snow-classifier
+$ python snow_classifier.py --predict ./models/clf.joblib -o ./images/results.csv --images ./images
 ```
 
-The results of the above code can be found in `images/results.csv`.
+Try `python snow_classifier.py --help` for further usage instructions.
 
-- The first column is the file name.
-- The second column is the timestamp.
-- The third column is the predicted label, where
-  - 0 means "no snow"
-  - 1 means "has snow"
-
-Using the sample data, we can re-train the classifier.
+## Sample Classifier Metrics
 
 ```
-python train_classifier.py csv/sample_labels.csv csv/sample_clusters.csv
+$ python snow_classifier.py --eval ./models/clf.joblib --labels ./csv/eval_labels.csv --features ./csv/img_features.csv
+Accuracy: 0.994413407821229
+F1 Score: [1.         0.99346405 0.97435897]
 ```
-
-## Training Pipeline
-
-Training data consists of RGB images taken at the canadaojp site between 08:00-20:00 local time every day of July 2016, October 2016, and January 2017 (excluding 1/11-1/14, for which no image data is available).
-
-1. Images are labeled as one of the following options using the data labeling tool
-   - 0 = no snow
-   - 1 = snow on ground
-   - 2 = snow on canopy
-2. Images are quantized with K-Means to reduce the number of colors.
-3. A Nu SVC is trained using 67% of the labeled data and evaluated for accuracy and F1 score on the remaining 33%.

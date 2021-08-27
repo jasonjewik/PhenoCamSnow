@@ -1,0 +1,1 @@
+2021-08-26T19:17:45.623830: C:\Users\jewik\GitRepos\snow-classifier\canadaojp_lightning_logs\version_2\checkpoints\epoch=49-step=299.ckpt2021-08-26T19:17:45.768863: C:\Users\jewik\GitRepos\snow-classifier\canadaojp_lightning_logs\version_2\checkpoints\epoch=49-step=299.ckpt

@@ -5,3 +5,7 @@ __pycache__/
 canadaojp_lightning_logs/
 canadaojp_test/*.jpg
 canadaojp_train/*.jpg
+
+vindeln2_lightning_logs/
+vindeln2_test/*.jpg
+vindeln2_train/*.jpg

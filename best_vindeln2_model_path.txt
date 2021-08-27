@@ -1,0 +1,1 @@
+2021-08-27T08:08:57.547315: C:\Users\jewik\GitRepos\snow-classifier\vindeln2_lightning_logs\version_0\checkpoints\epoch=49-step=299.ckpt

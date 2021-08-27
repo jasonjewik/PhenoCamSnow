@@ -1,2 +1,7 @@
 .vscode/
+.ipynb_checkpoints/
 __pycache__/
+
+canadaojp_lightning_logs/
+canadaojp_test/*.jpg
+canadaojp_train/*.jpg

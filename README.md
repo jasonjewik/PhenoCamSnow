@@ -27,7 +27,6 @@ python train.py [site] \
    --new \
    --n_train 120 \
    --n_test 30 \
-   --categories too_dark no_snow snow
 ```
 
 With already downloaded and labeled data:
@@ -44,7 +43,6 @@ For a local directory of images:
 ```console
 python predict.py [site] \
    [path/to/checkpoint_of_best_model.pth] \
-   --categories too_dark no_snow snow \
    --directory [site]_test_images
 ```
 
@@ -52,7 +50,6 @@ For a single online image:
 ```console
 python predict.py [site] \
    [path/to/checkpoint_of_best_model.pth] \
-   --categories too_dark no_snow snow \
    --url https://phenocam.sr.unh.edu/[path/to/image]
 ```
 

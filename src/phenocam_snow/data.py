@@ -5,7 +5,7 @@ import os
 from .utils import *
 
 # Third party
-import lightning as pl
+import pytorch_lightning as pl
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision.io import read_image
@@ -45,7 +45,7 @@ class PhenoCamImageDataset(Dataset):
 
 
 class PhenoCamDataModule(pl.LightningDataModule):
-    """Lightning DataModule that wraps the PhenoCam image dataset class."""
+    """pytorch_lightning DataModule that wraps the PhenoCam image dataset class."""
 
     def __init__(
         self, site_name, train_dir, train_labels, test_dir, test_labels, batch_size=16

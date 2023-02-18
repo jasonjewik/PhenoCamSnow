@@ -5,7 +5,7 @@ from .utils import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import lightning as pl
+import pytorch_lightning as pl
 from torchmetrics.functional import accuracy
 import torchvision.models as models
 

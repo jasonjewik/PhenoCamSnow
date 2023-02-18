@@ -10,9 +10,8 @@ from .utils import *
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, random_split
-import lightning as pl
-from lightning.callbacks.early_stopping import EarlyStopping
-from lightning.loggers import TensorBoardLogger
+import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
 import torch
 from torchmetrics.functional import accuracy
 from torchvision.io import read_image
@@ -155,7 +154,7 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     ##################
     dm.setup(stage="fit")
     model = PhenoCamResNet(n_classes=len(categories))
-    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
+    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
     trainer = pl.Trainer(
         gpus=1,
         log_every_n_steps=6,
@@ -230,7 +229,7 @@ def train_model_with_existing_data(site_name, train_dir, test_dir, deterministic
     ##################
     dm.setup(stage="fit")
     model = PhenoCamResNet(n_classes=len(dm.get_categories()))
-    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
+    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
     trainer = pl.Trainer(
         gpus=1,
         log_every_n_steps=6,

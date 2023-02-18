@@ -47,7 +47,7 @@ def main():
             run_model_offline(model, args.site_name, args.categories, args.directory)
 
 
-def classify_online(model, img_url: str) -> Tuple[np.ndarray, str]:
+def classify_online(model, img_url):
     """Performs online classification.
 
     :param model: The model to use.

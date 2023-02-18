@@ -51,7 +51,9 @@ def get_site_dates(site_name):
     start_date, end_date = None, None
     try:
         resp = requests.get(
-            f"https://phenocam.sr.unh.edu/webcam/sites/{site_name}/", timeout=10
+            f"https://phenocam.sr.unh.edu/webcam/sites/{site_name}/",
+            timeout=10,
+            verify=False
         )
         if resp.ok:
             start_date = resp.text.split("<strong>Start Date:</strong> ")[1][:10]

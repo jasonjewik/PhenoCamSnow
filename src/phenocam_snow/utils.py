@@ -39,7 +39,7 @@ def get_site_names():
     return None
 
 
-def get_site_dates(site_name) -> Tuple[str, str]:
+def get_site_dates(site_name):
     """Gets the dates of the first and last images collected at a site.
 
     :param site_name: The name of the PhenoCam site to download from.
@@ -160,7 +160,7 @@ def download(site_name, dates, save_to, n_photos):
                 log_file.write(f"WARN:Could not reach {month_url}\n")
 
 
-def download_from_log(source_log: FlexPath, save_to: FlexPath) -> None:
+def download_from_log(source_log, save_to):
     """Downloads images that are listed in a log file.
 
     :param source_log: The log file to get image URLs from.

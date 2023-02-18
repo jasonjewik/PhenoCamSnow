@@ -22,7 +22,9 @@ def get_site_names():
     site_names = []
     try:
         resp = requests.get(
-            "https://phenocam.sr.unh.edu/webcam/network/table/", timeout=10
+            "https://phenocam.sr.unh.edu/webcam/network/table/",
+            timeout=10,
+            verify=False
         )
         if resp.ok:
             arr0 = resp.text.split("<tbody>")
@@ -111,7 +113,7 @@ def download(site_name, dates, save_to, n_photos):
             D = str(my_datetime.day).zfill(2)
             month_url = f"{home_url}/{Y}/{m}/{D}"
             try:
-                resp1 = requests.get(month_url, timeout=5)
+                resp1 = requests.get(month_url, timeout=5, verify=False)
             except:
                 log_file.write(f"ERROR:Request timed out\n")
                 continue
@@ -137,7 +139,7 @@ def download(site_name, dates, save_to, n_photos):
                             )
                             break
                         try:
-                            resp2 = requests.get(img_url, timeout=5)
+                            resp2 = requests.get(img_url, timeout=5, verify=False)
                         except Exception as e:
                             log_file.write(f"ERROR:{e}\n")
                         if resp2.ok:
@@ -195,7 +197,7 @@ def download_from_log(source_log, save_to):
         f.write(f"INFO:Read {len(img_urls)} image URLs from {str(source_log)}\n")
         for url in img_urls:
             try:
-                resp = requests.get(url, timeout=5)
+                resp = requests.get(url, timeout=5, verify=False)
             except:
                 f.write("ERROR:Request timed out\n")
                 break

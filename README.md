@@ -23,7 +23,7 @@ In the following code snippets, `[site]` is a stand-in for some canonical site n
 
 With new data:
 ```console
-python train.py [site] \
+python -m phenocam_snow.train [site] \
    --new \
    --n_train 120 \
    --n_test 30 \
@@ -31,7 +31,7 @@ python train.py [site] \
 
 With already downloaded and labeled data:
 ```console
-python train.py \
+python -m phenocam_snow.train \
    --existing \
    --train_dir [site]_train \
    --test_dir [site]_test
@@ -41,14 +41,14 @@ python train.py \
 
 For a local directory of images:
 ```console
-python predict.py [site] \
+python -m phenocam_snow.predict [site] \
    [path/to/checkpoint_of_best_model.pth] \
    --directory [site]_test_images
 ```
 
 For a single online image:
 ```console
-python predict.py [site] \
+python -m phenocam_snow.predict [site] \
    [path/to/checkpoint_of_best_model.pth] \
    --url https://phenocam.sr.unh.edu/[path/to/image]
 ```

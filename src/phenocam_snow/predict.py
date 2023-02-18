@@ -59,7 +59,7 @@ def classify_online(model, img_url):
     """
     categories = ["too_dark", "no_snow", "snow"]
     try:
-        resp = requests.get(img_url, timeout=5)
+        resp = requests.get(img_url, timeout=5, verify=False)
     except:
         print("Request timed out")
     if resp.ok:

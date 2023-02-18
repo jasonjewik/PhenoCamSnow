@@ -101,15 +101,15 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
 
     train_dir = f"{site_name}_train"
     test_dir = f"{site_name}_test"
-    train_annotations = f"{train_dir}/labels.csv"
-    test_annotations = f"{test_dir}/labels.csv"
+    train_labels = f"{train_dir}/labels.csv"
+    test_labels = f"{test_dir}/labels.csv"
 
     dm_args = dict(
         site_name=site_name,
         train_dir=train_dir,
-        train_anns=train_annotations,
+        train_labels=train_labels,
         test_dir=test_dir,
-        test_anns=test_annotations,
+        test_labels=test_labels,
     )
     dm = PhenoCamDataModule(**dm_args)
 
@@ -125,7 +125,7 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
         site_name=site_name,
         categories=categories,
         img_dir=train_dir,
-        save_to=train_annotations,
+        save_to=train_labels,
         method=label_method,
     )
 
@@ -141,7 +141,7 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
         site_name=site_name,
         categories=categories,
         img_dir=test_dir,
-        save_to=test_annotations,
+        save_to=test_labels,
         method=label_method,
     )
 
@@ -217,9 +217,9 @@ def train_model_with_existing_data(site_name, train_dir, test_dir, deterministic
     dm_args = dict(
         site_name=site_name,
         train_dir=train_dir,
-        train_anns=train_dir.joinpath("labels.csv"),
+        train_labels=train_dir.joinpath("labels.csv"),
         test_dir=test_dir,
-        test_anns=test_dir.joinpath("labels.csv"),
+        test_labels=test_dir.joinpath("labels.csv"),
     )
     dm = PhenoCamDataModule(**dm_args)
     dm.prepare_data()

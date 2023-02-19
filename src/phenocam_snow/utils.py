@@ -22,7 +22,7 @@ def get_site_names():
     site_names = []
     try:
         resp = requests.get(
-            "https://phenocam.sr.unh.edu/webcam/network/table/",
+            "https://phenocam.nau.edu/webcam/network/table/",
             timeout=10,
             verify=False
         )
@@ -53,7 +53,7 @@ def get_site_dates(site_name):
     start_date, end_date = None, None
     try:
         resp = requests.get(
-            f"https://phenocam.sr.unh.edu/webcam/sites/{site_name}/",
+            f"https://phenocam.nau.edu/webcam/sites/{site_name}/",
             timeout=10,
             verify=False
         )
@@ -100,8 +100,8 @@ def download(site_name, dates, save_to, n_photos):
         random.shuffle(date_range)
 
         # Download images
-        home_url = f"https://phenocam.sr.unh.edu/webcam/browse/{site_name}"
-        img_template = f"https://phenocam.sr.unh.edu/data/archive/{site_name}"
+        home_url = f"https://phenocam.nau.edu/webcam/browse/{site_name}"
+        img_template = f"https://phenocam.nau.edu/data/archive/{site_name}"
         n_downloaded = 0
 
         # Keep downloading until the number downloaded is the number requested

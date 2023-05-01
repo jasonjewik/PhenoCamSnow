@@ -156,7 +156,6 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     model = PhenoCamResNet(n_classes=len(categories))
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
     trainer = pl.Trainer(
-        gpus=1,
         log_every_n_steps=6,
         gradient_clip_val=0.01,
         max_epochs=50,
@@ -231,7 +230,6 @@ def train_model_with_existing_data(site_name, train_dir, test_dir, deterministic
     model = PhenoCamResNet(n_classes=len(dm.get_categories()))
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
     trainer = pl.Trainer(
-        gpus=1,
         log_every_n_steps=6,
         gradient_clip_val=0.01,
         max_epochs=50,

@@ -151,7 +151,7 @@ class PhenoCamDataModule(pl.LightningDataModule):
         :type stage: str|None
         """
         if stage in ("fit", None):
-            img_dataset = PhenocamImageDataset(
+            img_dataset = PhenoCamImageDataset(
                 self.train_dir, self.train_labels, transform=self.aug_transform
             )
             train_size = round(len(img_dataset) * 0.7)
@@ -161,7 +161,7 @@ class PhenoCamDataModule(pl.LightningDataModule):
             )
             self.dims = self.img_train[0][0].shape
         if stage in ("test", None):
-            self.img_test = PhenocamImageDataset(
+            self.img_test = PhenoCamImageDataset(
                 self.test_dir, self.test_labels, transform=self.std_transform
             )
             self.dims = getattr(self, "dims", self.img_test[0][0].shape)

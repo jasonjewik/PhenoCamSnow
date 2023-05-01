@@ -54,7 +54,6 @@ def get_site_dates(site_name):
         resp = requests.get(
             f"https://phenocam.nau.edu/webcam/sites/{site_name}/",
             timeout=10
-            
         )
         if resp.ok:
             start_date = resp.text.split("<strong>Start Date:</strong> ")[1][:10]
@@ -213,12 +212,14 @@ def download_from_log(source_log, save_to):
                 f.write(f"ERROR:Bad response for {resp.url}\n")
 
 
-def label_images_via_subdir(site_name, img_dir, save_to):
+def label_images_via_subdir(site_name, categories, img_dir, save_to):
     """Allows the user to label images by moving them into the appropriate
        subdirectory.
 
     :param site_name: The name of the site.
     :type site_name: str
+    :param categories: The image categories.
+    :type categories: List[str]
     :param img_dir: The directory containing the image subdirectories.
     :type img_dir: str
     :param save_to: The destination path for the labels file.
@@ -231,7 +232,6 @@ def label_images_via_subdir(site_name, img_dir, save_to):
 
     # Check that the category subdirectories exist
     dircats = []
-    categories = ["too_dark", "no_snow", "snow"]
     for cat in categories:
         dircat = img_dir.joinpath(Path(cat))
         dircats.append(dircat)
@@ -262,7 +262,7 @@ def label_images_via_subdir(site_name, img_dir, save_to):
         f.write("# Categories:\n")
         for i, cat in enumerate(categories):
             f.write(f"# {i}. {cat}\n")
-    df.to_csv(save_to, mode="a", line_terminator="\n", index=False)
+    df.to_csv(save_to, mode="a", lineterminator="\n", index=False)
 
     # Flatten directory (i.e., pull all images out of the subdirectories
     # back into their original directory)
@@ -285,10 +285,10 @@ def read_labels(labels_file):
     """
     # Extract meta information
     site_name = (
-        pd.read_csv(ann_file, nrows=1, header=None)[0].tolist()[0].split("# Site: ")[1]
+        pd.read_csv(labels_file, nrows=1, header=None)[0].tolist()[0].split("# Site: ")[1]
     )
     labels_dict = {}
-    with open(ann_file, "r") as f:
+    with open(labels_file, "r") as f:
         start_reading = False
         for line in f:
             if start_reading:
@@ -303,7 +303,7 @@ def read_labels(labels_file):
                 start_reading = True
 
     # Sort timestamps
-    df = pd.read_csv(ann_file, comment="#")
+    df = pd.read_csv(labels_file, comment="#")
     df.set_index("timestamp", inplace=True)
     df.sort_index(inplace=True)
 

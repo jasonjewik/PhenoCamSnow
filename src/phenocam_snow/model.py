@@ -13,10 +13,12 @@ import torchvision.models as models
 class PhenoCamResNet(pl.LightningModule):
     """Loads pre-trained ResNet18 for fine-tuning."""
 
-    def __init__(self, lr=2e-4):
+    def __init__(self, lr=2e-4, n_classes=3):
         """
         :param lr: The learning rate. Default is 2e-4.
         :type lr: float
+        :param n_classes: stub argument, to be cleaned up
+        :type n_classes: int
         """
         super().__init__()
 
@@ -67,7 +69,7 @@ class PhenoCamResNet(pl.LightningModule):
             z = F.log_softmax(z, dim=1)
         loss = F.cross_entropy(z, y)
         preds = torch.argmax(z, dim=1)
-        acc = accuracy(preds, y)
+        acc = accuracy(preds, y, task="multiclass", num_classes=3)
 
         if stage:
             self.log(f"{stage}_loss", loss, prog_bar=True)

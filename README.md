@@ -1,87 +1,65 @@
-# Automated PhenoCam Snow Flagging with Deep Learning
+<h1 align="center">PhenoCamSnow</h1>
 
-Code implementation of the model described in these [presentation slides](https://docs.google.com/presentation/d/1zFCDnZnycpJXPcuW35efhbMwoQzJRTzgZlB8ETyN7XI/edit?usp=sharing).
+[![Documentation Status](https://readthedocs.org/projects/phenocamsnow/badge/?version=latest)](https://phenocamsnow.readthedocs.io/en/latest/?badge=latest)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Relevant links:
+**PhenoCamSnow** is a Python package for quickly building deep learning models to classify [PhenoCam images](https://phenocam.sr.unh.edu/).
 
-- [The PhenoCam Network](https://phenocam.sr.unh.edu/)
-- [Conda](https://conda.io/projects/conda/en/latest/index.html)
-- [PyTorch](https://pytorch.org/)
-- [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/latest/)
-- [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
+## Installation
 
-## Download
+PhenoCamSnow supports Python 3.7+ and can be installed via pip:
 
-```
-git clone https://github.com/jasonjewik/snow-classifier
+```console
+pip install phenocam-snow
 ```
 
-## Requirements
+Optional dependencies for development and documentation purposes can be installed by specifying the extras `[dev]` and `[docs]`, repsectively. 
 
-This code was developed on Windows OS. The exact specifications for the Anaconda environment used in development can be found in `windows_env.yml`.
+## Quickstart
 
-Installation on Windows:
+The following code snippets show how to perform classification of canadaOBS images into "snow", "no snow", and "too dark". If you wish to use a different site, use the canonical site name as listed on [the PhenoCam website](https://phenocam.nau.edu/webcam/network/table/). 
 
-1. Create the environment from the environment file:
-   ```
-   conda env create -f windows_env.yml
-   ```
-2. Activate the environment:
-   ```
-   conda activate snow-classifier
-   ```
+### Training a model
 
-Also provided is a manually created environment file with just the explicitly installed packages.
-
-## Usage
-
-### Notebook
-
-Follow the instructions in the notebook. Code is nearly identical to the scripts, but with the additional option of labeling images in notebook.
-
-### Script
-
-The following code snippets assume the desired site is [canadaojp](https://phenocam.sr.unh.edu/webcam/sites/canadaojp/). If you want to train a model for another site, replace `canadaojp` with that site's canonical name, as listed on the [site table](https://phenocam.sr.unh.edu/webcam/network/table/). E.g., `canadaOBS`.
-
-**To train a model with new data:**
-
-```
-python train.py canadaojp --new --n_train 120 --n_test 30 --categories too_dark no_snow snow
+With new data:
+```console
+python -m phenocam_snow.train canadaOBS \
+   --new \
+   --n_train 120 \
+   --n_test 30 \
+   --classes snow no_snow too_dark
 ```
 
-- Categories are separated by spaces, so any spaces in a category's name must be replaced with another character or ommitted. E.g., `too_dark` and `TooDark` are both acceptable alternatives to `too dark`.
-- The path to the best model will be printed to the console and written to `best_model_paths.csv`.
-
-**To train a model with already downloaded and labeled data:**
-
-```
-python train.py --existing --train_dir canadaojp_train --test_dir --canadaojp_test
-```
-
-- Train image annotations must be in the file `canadaojp_train/annotations.csv`, of the format returned by `utils.label_images_via_subdir`.
-- Likewise for test image annotations.
-- The path to the best model will be printed to the console and written to `best_model_paths.csv`.
-
-**To get predicted categories for a local directory of images:**
-
-```
-python predict.py canadaojp path/to/best_model.pth --categories too_dark no_snow snow --directory canadaojp_test_images
+With already downloaded and labeled data:
+```console
+python -m phenocam_snow.train \
+   --existing \
+   --train_dir canadaOBS_train \
+   --test_dir canadaOBS_test \
+   --classes snow no_snow too_dark
 ```
 
-- Replace `path/to/best_model.pth` with a path returned by `train.py`
-- The order of the categories matter! Ensure these match the order in the annotations file.
+### Getting predictions
 
-**To get the predicted category for a single online image:**
-
+For a local directory of images:
+```console
+python -m phenocam_snow.predict canadaOBS \
+   [path/to/checkpoint_of_best_model.pth] \
+   --directory canadaOBS_test_images
 ```
-python predict.py canadaojp path/to/best_model.pth --categories too_dark no_snow snow --url https://phenocam.sr.unh.edu/data/latest/canadaojp.jpg
+
+For a single online image:
+```console
+python -m phenocam_snow.predict canadaOBS \
+   [path/to/checkpoint_of_best_model.pth] \
+   --url https://phenocam.sr.unh.edu/[path/to/image]
 ```
 
-- Same as above code snippet's notes.
+Advanced usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).
 
-## Experimental results / Examples
+## Citation
 
-See the notebook `PhenoCamResNet.ipynb`.
+If you use PhenoCamSnow for your work, please see [`CITATION.cff`](CITATION.cff) or use the citation prompt provided by GitHub in the sidebar.
 
 ## Acknowledgements
 

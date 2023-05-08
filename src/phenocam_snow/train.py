@@ -7,16 +7,10 @@ from .model import *
 from .utils import *
 
 # Third party
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, random_split
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
 import torch
-from torchmetrics.functional import accuracy
-from torchvision.io import read_image
-import torchvision.models as models
-import torchvision.transforms as transforms
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.loggers import TensorBoardLogger
 
 
 def main():
@@ -25,11 +19,21 @@ def main():
     )
     parser.add_argument("site_name", help="The PhenoCam site to train on.")
     parser.add_argument(
+        "--model",
+        default="resnet18",
+        help="Pick from 'resnet18', 'resnet34', 'resnet50', 'resnet101', or 'resnet152'. Defaults to 'resnet18'.",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=5e-4,
+        help="The learning rate to use. Defaults to 5e-4.",
+    )
+    parser.add_argument(
         "--new",
         action="store_true",
         default=False,
-        help="If given, trains and tests on new data. \
-                            --n_train, --n_test, --categories are required.",
+        help="If given, trains and tests on new data. --n_train, --n_test, --classes are required.",
     )
     parser.add_argument(
         "--n_train", type=int, help="The number of train images to use."
@@ -39,8 +43,7 @@ def main():
         "--existing",
         action="store_true",
         default=False,
-        help="If given, trains and tests on existing data. \
-                            --train_dir, --test_dir are required",
+        help="If given, trains and tests on existing data. --train_dir, --test_dir are required",
     )
     parser.add_argument(
         "--train_dir", help="The file path of the train images directory."
@@ -48,35 +51,44 @@ def main():
     parser.add_argument(
         "--test_dir", help="The file path of the test images directory."
     )
-    parser.add_argument(
-        "--deterministic",
-        action="store_true",
-        default=False,
-        help="If specified, everything is seeded with 42",
-    )
+    parser.add_argument("--classes", nargs="+", help="The image classes to use.")
     args = parser.parse_args()
-
-    if args.deterministic:
-        pl.seed_everything(42, workers=True)
 
     if args.new and args.existing:
         print("Cannot specify both --new and --existing")
     elif args.new:
         label_method = "via subdir"  # can't do "in notebook" from a script
         train_model_with_new_data(
-            args.site_name, label_method, args.n_train, args.n_test, args.deterministic
+            args.model,
+            args.learning_rate,
+            args.site_name,
+            label_method,
+            args.n_train,
+            args.n_test,
+            args.classes,
         )
     elif args.existing:
         train_model_with_existing_data(
-            args.site_name, args.train_dir, args.test_dir, args.deterministic
+            args.model,
+            args.learning_rate,
+            args.site_name,
+            args.train_dir,
+            args.test_dir,
+            args.classes,
         )
     else:
         print("Please specify either --new or --existing")
 
 
-def train_model_with_new_data(site_name, label_method, n_train, n_test, deterministic):
+def train_model_with_new_data(
+    model, learning_rate, site_name, label_method, n_train, n_test, classes
+):
     """Pipeline for building a model on new data.
 
+    :param model: The ResNet variant to use.
+    :type model: str
+    :param learning_rate: The learning rate to use.
+    :type learning_rate: float
     :param site_name: The name of the PhenoCam site you want.
     :type site_name: str
     :param label_method: How you wish to label images ("in notebook" or "via
@@ -86,16 +98,14 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     :type n_train: int
     :param n_test: The number of testing images to use.
     :type n_test: int
-    :param deterministic: Whether the trainer should have the `deterministic`
-        flag enabled. False, by default.
-    :type deterministic: bool
+    :param classes: The image classes.
+    :type classes: List[str]
     :return: The best model obtained during training.
     :rtype: PhenoCamResNet
     """
     ##############################
     # 1. Download and label data #
     ##############################
-    categories = ["too_dark", "no_snow", "snow"]
     valid_label_methods = ["in notebook", "via subdir"]
     assert label_method in valid_label_methods
 
@@ -123,7 +133,7 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     # Train label arguments
     train_label_args = dict(
         site_name=site_name,
-        categories=categories,
+        categories=classes,
         img_dir=train_dir,
         save_to=train_labels,
         method=label_method,
@@ -139,7 +149,7 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     # Test label arguments
     test_label_args = dict(
         site_name=site_name,
-        categories=categories,
+        categories=classes,
         img_dir=test_dir,
         save_to=test_labels,
         method=label_method,
@@ -153,14 +163,16 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     # 2. Train model #
     ##################
     dm.setup(stage="fit")
-    model = PhenoCamResNet(n_classes=len(categories))
-    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
+    model = PhenoCamResNet(model, len(classes), learning_rate)
+    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
+    callbacks = [EarlyStopping(monitor="val_loss", mode="min")]
+    accelerator = "gpu" if torch.cuda.is_available() else None
     trainer = pl.Trainer(
-        log_every_n_steps=6,
-        gradient_clip_val=0.01,
-        max_epochs=50,
         logger=logger,
-        deterministic=deterministic,
+        callbacks=callbacks,
+        max_epochs=50,
+        accelerator=accelerator,
+        precision=16,
     )
     trainer.fit(model, dm)
 
@@ -190,18 +202,26 @@ def train_model_with_new_data(site_name, label_method, n_train, n_test, determin
     return best_model
 
 
-def train_model_with_existing_data(site_name, train_dir, test_dir, deterministic):
+def train_model_with_existing_data(
+    model, learning_rate, site_name, label_method, n_train, n_test, classes
+):
     """Pipeline for building model with already downloaded/labeled data.
 
+    :param model: The ResNet variant to use.
+    :type model: str
+    :param learning_rate: The learning rate to use.
+    :type learning_rate: float
     :param site_name: The name of the PhenoCam site you want.
     :type site_name: str
-    :param train_dir: Directory with training images and labels.
-    :type train_dir: str
-    :param test_dir: Directory with testing images and labels.
-    :type test_dir: str
-    :param deterministic: Whether the trainer should have the `deterministic`
-    flag enabled. False, by default.
-    :type deterministic: bool
+    :param label_method: How you wish to label images ("in notebook" or "via
+        subdir").
+    :type label_method: str
+    :param n_train: The number of training images to use.
+    :type n_train: int
+    :param n_test: The number of testing images to use.
+    :type n_test: int
+    :param classes: The image classes.
+    :type classes: List[str]
     :return: The best model obtained during training.
     :rtype: PhenoCamResNet
     """
@@ -227,14 +247,16 @@ def train_model_with_existing_data(site_name, train_dir, test_dir, deterministic
     # 2. Train model #
     ##################
     dm.setup(stage="fit")
-    model = PhenoCamResNet(n_classes=len(dm.get_categories()))
-    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_pytorch_lightning_logs")
+    model = PhenoCamResNet(model, len(classes), learning_rate)
+    logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
+    callbacks = [EarlyStopping(monitor="val_loss", mode="min")]
+    accelerator = "gpu" if torch.cuda.is_available() else None
     trainer = pl.Trainer(
-        log_every_n_steps=6,
-        gradient_clip_val=0.01,
-        max_epochs=50,
         logger=logger,
-        deterministic=deterministic,
+        callbacks=callbacks,
+        max_epochs=50,
+        accelerator=accelerator,
+        precision=16,
     )
     trainer.fit(model, dm)
 

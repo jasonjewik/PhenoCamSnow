@@ -1,7 +1,6 @@
 # Standard library
 from datetime import datetime
 from io import BytesIO
-import math
 import os
 from pathlib import Path
 import random
@@ -22,8 +21,7 @@ def get_site_names():
     site_names = []
     try:
         resp = requests.get(
-            "https://phenocam.nau.edu/webcam/network/table/",
-            timeout=10
+            "https://phenocam.nau.edu/webcam/network/table/", timeout=10
         )
         if resp.ok:
             arr0 = resp.text.split("<tbody>")
@@ -52,8 +50,7 @@ def get_site_dates(site_name):
     start_date, end_date = None, None
     try:
         resp = requests.get(
-            f"https://phenocam.nau.edu/webcam/sites/{site_name}/",
-            timeout=10
+            f"https://phenocam.nau.edu/webcam/sites/{site_name}/", timeout=10
         )
         if resp.ok:
             start_date = resp.text.split("<strong>Start Date:</strong> ")[1][:10]
@@ -285,7 +282,9 @@ def read_labels(labels_file):
     """
     # Extract meta information
     site_name = (
-        pd.read_csv(labels_file, nrows=1, header=None)[0].tolist()[0].split("# Site: ")[1]
+        pd.read_csv(labels_file, nrows=1, header=None)[0]
+        .tolist()[0]
+        .split("# Site: ")[1]
     )
     labels_dict = {}
     with open(labels_file, "r") as f:

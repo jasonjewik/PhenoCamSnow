@@ -6,10 +6,10 @@ from .utils import *
 
 # Third party
 import pytorch_lightning as pl
-from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision.io import read_image
-import torchvision.transforms as transforms
+from torchvision import transforms
+from torchvision.models import ResNet18_Weights
 
 
 class PhenoCamImageDataset(Dataset):
@@ -37,7 +37,7 @@ class PhenoCamImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        img = read_image(img_path) / 255
+        img = read_image(img_path)
         label = self.img_labels.iloc[idx, 1]
         if self.transform:
             img = self.transform(img)
@@ -73,22 +73,8 @@ class PhenoCamDataModule(pl.LightningDataModule):
         self.test_labels = test_labels
         self.batch_size = batch_size
 
-        # Augmentation policy for training set
-        self.aug_transform = transforms.Compose(
-            [
-                transforms.Resize(224, interpolation=3),
-                transforms.RandomApply([transforms.GaussianBlur(3)]),
-                transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD),
-            ]
-        )
-
-        # Preprocessing steps applied to test data
-        self.std_transform = transforms.Compose(
-            [
-                transforms.Resize(224, interpolation=3),
-                transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD),
-            ]
-        )
+        self.preprocess = ResNet18_Weights.DEFAULT.transforms()
+        self.augment = transforms.Compose([self.preprocess, transforms.GaussianBlur(3)])
 
     def prepare_data(
         self,
@@ -152,9 +138,9 @@ class PhenoCamDataModule(pl.LightningDataModule):
         """
         if stage in ("fit", None):
             img_dataset = PhenoCamImageDataset(
-                self.train_dir, self.train_labels, transform=self.aug_transform
+                self.train_dir, self.train_labels, transform=self.augment
             )
-            train_size = round(len(img_dataset) * 0.7)
+            train_size = round(len(img_dataset) * 0.8)
             val_size = len(img_dataset) - train_size
             self.img_train, self.img_val = random_split(
                 img_dataset, [train_size, val_size]
@@ -162,7 +148,7 @@ class PhenoCamDataModule(pl.LightningDataModule):
             self.dims = self.img_train[0][0].shape
         if stage in ("test", None):
             self.img_test = PhenoCamImageDataset(
-                self.test_dir, self.test_labels, transform=self.std_transform
+                self.test_dir, self.test_labels, transform=self.preprocess
             )
             self.dims = getattr(self, "dims", self.img_test[0][0].shape)
 

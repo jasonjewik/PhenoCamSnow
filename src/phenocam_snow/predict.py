@@ -65,7 +65,7 @@ def classify_online(model, img_url):
     if resp.ok:
         img = Image.open(BytesIO(resp.content))
         np_img = np.array(img)
-        x = transforms.ToTensor()(img)
+        x = torch.from_numpy(np_img)
         dm = PhenoCamDataModule(
             "dummy_site_name",
             "dummy_train_dir",
@@ -73,9 +73,9 @@ def classify_online(model, img_url):
             "dummy_test_dir",
             "dummy_test_anns",
         )
-        x = dm.std_transform(x.unsqueeze(0))
-        z = model(x)
-        pred = categories[torch.argmax(z, dim=1)]
+        x = dm.preprocess(x.unsqueeze(0))
+        yhat = model(x)
+        pred = categories[torch.argmax(yhat, dim=1)]
         return (np_img, pred)
     else:
         print("Error occurred")
@@ -100,9 +100,9 @@ def classify_offline(model, img_path):
         "dummy_test_dir",
         "dummy_test_anns",
     )
-    x = dm.std_transform((read_image(img_path) / 255).unsqueeze(0))
-    z = model(x)
-    pred = categories[torch.argmax(z, dim=1)]
+    x = dm.preprocess(read_image(img_path).unsqueeze(0))
+    yhat = model(x)
+    pred = categories[torch.argmax(yhat, dim=1)]
     return pred
 
 

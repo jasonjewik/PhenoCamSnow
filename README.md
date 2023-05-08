@@ -3,7 +3,7 @@
 [![Documentation Status](https://readthedocs.org/projects/phenocamsnow/badge/?version=latest)](https://phenocamsnow.readthedocs.io/en/latest/?badge=latest)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**PhenoCamSnow** is a Python package for quickly building deep learning models to classify [PhenoCam images](https://phenocam.sr.unh.edu/) into "has snow", "doesn't have snow", or "is too dark".
+**PhenoCamSnow** is a Python package for quickly building deep learning models to classify [PhenoCam images](https://phenocam.sr.unh.edu/).
 
 ## Installation
 
@@ -17,44 +17,45 @@ Optional dependencies for development and documentation purposes can be installe
 
 ## Quickstart
 
-In the following code snippets, `[site]` is a stand-in for some canonical site name as listed on [the PhenoCam website](https://phenocam.nau.edu/webcam/network/table/).
+The following code snippets show how to perform classification of canadaOBS images into "snow", "no snow", and "too dark". If you wish to use a different site, use the canonical site name as listed on [the PhenoCam website](https://phenocam.nau.edu/webcam/network/table/). 
 
 ### Training a model
 
 With new data:
 ```console
-python -m phenocam_snow.train [site] \
+python -m phenocam_snow.train canadaOBS \
    --new \
    --n_train 120 \
    --n_test 30 \
+   --classes snow no_snow too_dark
 ```
 
 With already downloaded and labeled data:
 ```console
 python -m phenocam_snow.train \
    --existing \
-   --train_dir [site]_train \
-   --test_dir [site]_test
+   --train_dir canadaOBS_train \
+   --test_dir canadaOBS_test \
+   --classes snow no_snow too_dark
 ```
 
 ### Getting predictions
 
 For a local directory of images:
 ```console
-python -m phenocam_snow.predict [site] \
+python -m phenocam_snow.predict canadaOBS \
    [path/to/checkpoint_of_best_model.pth] \
-   --directory [site]_test_images
+   --directory canadaOBS_test_images
 ```
 
 For a single online image:
 ```console
-python -m phenocam_snow.predict [site] \
+python -m phenocam_snow.predict canadaOBS \
    [path/to/checkpoint_of_best_model.pth] \
    --url https://phenocam.sr.unh.edu/[path/to/image]
 ```
 
-
-Further usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).
+Advanced usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).
 
 ## Citation
 

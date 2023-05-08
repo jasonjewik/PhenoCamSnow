@@ -33,7 +33,7 @@ def main():
         "--weight_decay",
         type=float,
         default=0.01,
-        help="The weight decay to use. Defaults to 0.01."
+        help="The weight decay to use. Defaults to 0.01.",
     )
     parser.add_argument(
         "--new",
@@ -89,7 +89,14 @@ def main():
 
 
 def train_model_with_new_data(
-    model, learning_rate, weight_decay, site_name, label_method, n_train, n_test, classes
+    model,
+    learning_rate,
+    weight_decay,
+    site_name,
+    label_method,
+    n_train,
+    n_test,
+    classes,
 ):
     """Pipeline for building a model on new data.
 
@@ -166,10 +173,7 @@ def train_model_with_new_data(
     )
 
     dm.prepare_data(
-        train_download_args,
-        train_label_args,
-        test_download_args,
-        test_label_args
+        train_download_args, train_label_args, test_download_args, test_label_args
     )
 
     ##################
@@ -217,7 +221,14 @@ def train_model_with_new_data(
 
 
 def train_model_with_existing_data(
-    model, learning_rate, weight_decay, site_name, label_method, n_train, n_test, classes
+    model,
+    learning_rate,
+    weight_decay,
+    site_name,
+    label_method,
+    n_train,
+    n_test,
+    classes,
 ):
     """Pipeline for building model with already downloaded/labeled data.
 

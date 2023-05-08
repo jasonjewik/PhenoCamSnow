@@ -90,5 +90,7 @@ class PhenoCamResNet(pl.LightningModule):
         self.evaluate(batch, "test")
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weigh_decay=self.hparams.weight_decay)
+        optimizer = torch.optim.AdamW(
+            self.parameters(), lr=self.hparams.lr, weigh_decay=self.hparams.weight_decay
+        )
         return optimizer

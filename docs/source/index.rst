@@ -2,17 +2,23 @@ PhenoCamSnow
 ============
 
 **PhenoCamSnow** is a Python package for quickly building deep learning models
-to classify `PhenoCam images <https://phenocam.sr.unh.edu/>`_ into "has snow",
-"doesn't have snow", or "is too dark". The library is managed by
-`Jason Jewik <https://jasonjewik.github.io/>`_.
+to classify `PhenoCam images <https://phenocam.sr.unh.edu/>`_. The library is
+named as such because it was originally designed for detecting the presence
+of snow in canadaOBS images. `Jason Jewik <https://jasonjewik.github.io/>`_
+is the maintainer.
 
-.. note::
+.. toctree::
+   :caption: User Guide
 
-   Documentation coming soon!
+   user-guide/train.rst
+   user-guide/predict.rst
 
 .. toctree::
    :caption: API Reference
    :maxdepth: 1
-   :glob:
 
-   reference/*
+   reference/data.rst
+   reference/model.rst
+   reference/train.rst
+   reference/predict.rst
+   reference/utils.rst

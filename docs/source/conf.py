@@ -2,10 +2,10 @@
 import sphinx_rtd_theme
 import os
 import sys
-import phenocam_snow
 
 # Point ReadTheDocs to the directory
 sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
+import phenocam_snow
 
 # -- Project information
 

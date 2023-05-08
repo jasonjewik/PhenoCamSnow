@@ -60,10 +60,10 @@ def main():
     parser.add_argument("--classes", nargs="+", help="The image classes to use.")
     args = parser.parse_args()
 
+    label_method = "via subdir"  # can't do "in notebook" from a script
     if args.new and args.existing:
         print("Cannot specify both --new and --existing")
     elif args.new:
-        label_method = "via subdir"  # can't do "in notebook" from a script
         train_model_with_new_data(
             args.model,
             args.learning_rate,
@@ -225,9 +225,8 @@ def train_model_with_existing_data(
     learning_rate,
     weight_decay,
     site_name,
-    label_method,
-    n_train,
-    n_test,
+    train_dir,
+    test_dir,
     classes,
 ):
     """Pipeline for building model with already downloaded/labeled data.

@@ -259,7 +259,7 @@ def label_images_via_subdir(site_name, categories, img_dir, save_to):
         f.write("# Categories:\n")
         for i, cat in enumerate(categories):
             f.write(f"# {i}. {cat}\n")
-    df.to_csv(save_to, mode="a", lineterminator="\n", index=False)
+    df.to_csv(save_to, mode="a", index=False)
 
     # Flatten directory (i.e., pull all images out of the subdirectories
     # back into their original directory)

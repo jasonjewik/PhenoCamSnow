@@ -30,6 +30,12 @@ def main():
         help="The learning rate to use. Defaults to 5e-4.",
     )
     parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=0.01,
+        help="The weight decay to use. Defaults to 0.01."
+    )
+    parser.add_argument(
         "--new",
         action="store_true",
         default=False,
@@ -61,6 +67,7 @@ def main():
         train_model_with_new_data(
             args.model,
             args.learning_rate,
+            args.weight_decay,
             args.site_name,
             label_method,
             args.n_train,
@@ -71,6 +78,7 @@ def main():
         train_model_with_existing_data(
             args.model,
             args.learning_rate,
+            args.weight_decay,
             args.site_name,
             args.train_dir,
             args.test_dir,
@@ -81,7 +89,7 @@ def main():
 
 
 def train_model_with_new_data(
-    model, learning_rate, site_name, label_method, n_train, n_test, classes
+    model, learning_rate, weight_decay, site_name, label_method, n_train, n_test, classes
 ):
     """Pipeline for building a model on new data.
 
@@ -89,6 +97,8 @@ def train_model_with_new_data(
     :type model: str
     :param learning_rate: The learning rate to use.
     :type learning_rate: float
+    :param weight_decay: The weight decay to use.
+    :type weight_decay: float
     :param site_name: The name of the PhenoCam site you want.
     :type site_name: str
     :param label_method: How you wish to label images ("in notebook" or "via
@@ -156,14 +166,17 @@ def train_model_with_new_data(
     )
 
     dm.prepare_data(
-        train_download_args, train_label_args, test_download_args, test_label_args
+        train_download_args,
+        train_label_args,
+        test_download_args,
+        test_label_args
     )
 
     ##################
     # 2. Train model #
     ##################
     dm.setup(stage="fit")
-    model = PhenoCamResNet(model, len(classes), learning_rate)
+    model = PhenoCamResNet(model, len(classes), learning_rate, weight_decay)
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
     callbacks = [EarlyStopping(monitor="val_loss", mode="min")]
     accelerator = "gpu" if torch.cuda.is_available() else None
@@ -171,6 +184,7 @@ def train_model_with_new_data(
         logger=logger,
         callbacks=callbacks,
         max_epochs=50,
+        log_every_n_steps=3,
         accelerator=accelerator,
         precision=16,
     )
@@ -203,7 +217,7 @@ def train_model_with_new_data(
 
 
 def train_model_with_existing_data(
-    model, learning_rate, site_name, label_method, n_train, n_test, classes
+    model, learning_rate, weight_decay, site_name, label_method, n_train, n_test, classes
 ):
     """Pipeline for building model with already downloaded/labeled data.
 
@@ -211,6 +225,8 @@ def train_model_with_existing_data(
     :type model: str
     :param learning_rate: The learning rate to use.
     :type learning_rate: float
+    :param weight_decay: The weight decay to use.
+    :type weight_decay: float
     :param site_name: The name of the PhenoCam site you want.
     :type site_name: str
     :param label_method: How you wish to label images ("in notebook" or "via
@@ -247,7 +263,7 @@ def train_model_with_existing_data(
     # 2. Train model #
     ##################
     dm.setup(stage="fit")
-    model = PhenoCamResNet(model, len(classes), learning_rate)
+    model = PhenoCamResNet(model, len(classes), learning_rate, weight_decay)
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
     callbacks = [EarlyStopping(monitor="val_loss", mode="min")]
     accelerator = "gpu" if torch.cuda.is_available() else None

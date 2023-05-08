@@ -13,7 +13,7 @@ import torchvision.models as models
 class PhenoCamResNet(pl.LightningModule):
     """Loads pre-trained ResNet for fine-tuning."""
 
-    def __init__(self, resnet, n_classes, lr=5e-4):
+    def __init__(self, resnet, n_classes, lr=5e-4, weight_decay=0.01):
         """
         :param resnet: The ResNet variant to use.
         :type resnet: str
@@ -21,6 +21,8 @@ class PhenoCamResNet(pl.LightningModule):
         :type n_classes: int
         :param lr: The learning rate. Default is 1e-5.
         :type lr: float
+        :param weight_decay: The weight decay to use. Default is 0.1.
+        :type weight_decay: float
         """
         super().__init__()
         self.save_hyperparameters()
@@ -88,5 +90,5 @@ class PhenoCamResNet(pl.LightningModule):
         self.evaluate(batch, "test")
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weigh_decay=self.hparams.weight_decay)
         return optimizer

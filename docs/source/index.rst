@@ -7,6 +7,12 @@ named as such because it was originally designed for detecting the presence
 of snow in canadaOBS images. `Jason Jewik <https://jasonjewik.github.io/>`_
 is the maintainer.
 
+Installation
+------------
+.. code-block:: bash
+
+   pip install phenocam-snow
+
 .. toctree::
    :caption: User Guide
 

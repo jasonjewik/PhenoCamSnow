@@ -119,7 +119,7 @@ def load_model_from_file(model_path):
     return model
 
 
-def run_model_offline(model, site_name, img_dir):
+def run_model_offline(model, site_name, categories, img_dir):
     """Gets predicted labels for all images in a directory.
 
     :param model: The model to use.
@@ -134,7 +134,6 @@ def run_model_offline(model, site_name, img_dir):
     ######################
     # 1. Get predictions #
     ######################
-    categories = ["too_dark", "no_snow", "snow"]
     if type(img_dir) is str:
         img_dir = Path(img_dir)
     timestamps, predictions = [], []

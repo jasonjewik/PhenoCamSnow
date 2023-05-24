@@ -40,7 +40,7 @@ def main():
     elif not (args.url or args.directory):
         print("Please specify either --url or --directory")
     else:
-        model = load_model_from_file(args.model_path, len(args.categories))
+        model = load_model_from_file(args.model_path)
         if args.url:
             run_model_online(model, args.site_name, args.categories, args.url)
         elif args.directory:

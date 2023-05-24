@@ -182,7 +182,7 @@ def train_model_with_new_data(
     dm.setup(stage="fit")
     model = PhenoCamResNet(model, len(classes), learning_rate, weight_decay)
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=f"{site_name}_lightning_logs")
-    callbacks = [EarlyStopping(monitor="val_loss", mode="min")]
+    callbacks = [EarlyStopping(monitor="val_loss", mode="min", min_delta=1e-8)]
     accelerator = "gpu" if torch.cuda.is_available() else None
     trainer = pl.Trainer(
         logger=logger,

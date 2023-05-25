@@ -42,5 +42,19 @@ images. In this case, we will be getting 120 training images and 30 testing
 images. Empirically, I found this to work well for canadaojp (93% accuracy
 on the testing images).
 
+When the program has finished training the model, it will print out the model's
+performance on the testing images and the file path of the saved best model.
+This file path will also be written to a file called ``best_model_paths.csv``,
+which will look something like this:
+
+.. code-block:: text
+    :linenos:
+
+    timestamp,site_name,best_model
+    2023-05-24T15:45:59.642605,canadaojp,/home/jason/Development/test/canadaojp_lightning_logs/version_0/checkpoints/epoch=12-step=78.ckpt
+
+To get the model's predictions for a set of images, see the next section of the
+documentation.
+
 If you have further questions, please raise an
 `issue on the GitHub repository <https://github.com/jasonjewik/PhenoCamSnow/issues/new/choose>`_.

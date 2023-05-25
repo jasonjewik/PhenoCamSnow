@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phenocam-snow"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
     { name = "Jason Jewik", email = "jason.jewik@cs.ucla.edu" }
 ]
@@ -12,7 +12,7 @@ description = "Pipeline for building deep learning models to classify PhenoCam i
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",

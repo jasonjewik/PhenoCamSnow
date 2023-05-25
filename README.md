@@ -15,44 +15,30 @@ pip install phenocam-snow
 
 Optional dependencies for development and documentation purposes can be installed by specifying the extras `[dev]` and `[docs]`, repsectively. 
 
-## Quickstart
+## Example Usage
 
-The following code snippets show how to perform classification of canadaOBS images into "snow", "no snow", and "too dark". If you wish to use a different site, use the canonical site name as listed on [the PhenoCam website](https://phenocam.nau.edu/webcam/network/table/). 
+The following code snippets show how to train and evaluate a model on classifying images from the canadaojp site into "snow", "no snow", and "too dark".
 
-### Training a model
-
-With new data:
 ```console
-python -m phenocam_snow.train canadaOBS \
+python -m phenocam_snow.train \
+   canadaojp \
+   --model resnet18 \
+   --learning_rate 5e-4 \
+   --weight_decay 0.01 \
    --new \
    --n_train 120 \
    --n_test 30 \
    --classes snow no_snow too_dark
 ```
+This will print out the file path of the best model, which can be substituted into the next command.
 
-With already downloaded and labeled data:
 ```console
-python -m phenocam_snow.train \
-   --existing \
-   --train_dir canadaOBS_train \
-   --test_dir canadaOBS_test \
-   --classes snow no_snow too_dark
-```
-
-### Getting predictions
-
-For a local directory of images:
-```console
-python -m phenocam_snow.predict canadaOBS \
-   [path/to/checkpoint_of_best_model.pth] \
-   --directory canadaOBS_test_images
-```
-
-For a single online image:
-```console
-python -m phenocam_snow.predict canadaOBS \
-   [path/to/checkpoint_of_best_model.pth] \
-   --url https://phenocam.sr.unh.edu/[path/to/image]
+python -m phenocam_snow.predict \
+   canadaojp \
+   [path/to/best_model.ckpt] \
+   resnet18 \
+   --categories snow no_snow too_dark
+   --url https://phenocam.nau.edu/data/latest/canadaojp.jpg
 ```
 
 Advanced usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).

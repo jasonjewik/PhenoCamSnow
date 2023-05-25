@@ -121,7 +121,9 @@ def load_model_from_file(model_path, resnet, n_classes):
     :return: The loaded model.
     :rtype: PhenoCamResNet
     """
-    model = PhenoCamResNet.load_from_checkpoint(model_path, resnet=resnet, n_classes=n_classes)
+    model = PhenoCamResNet.load_from_checkpoint(
+        model_path, resnet=resnet, n_classes=n_classes
+    )
     model.freeze()
     return model
 

@@ -1,5 +1,6 @@
 # Standard library imports
 from argparse import ArgumentParser
+import os
 
 # Local application imports
 from .data import *
@@ -11,7 +12,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import torch
-import torchvision.transforms as transforms
 
 
 def main():
@@ -34,18 +34,20 @@ def main():
         help="Provide this if you want to get predictions for all \
                             images in a local directory.",
     )
+    parser.add_argument(
+        "--urls",
+        default=None,
+        help="A file containing URLs, one per line."
+    )
     args = parser.parse_args()
 
-    if args.url and args.directory:
-        print("Cannot specify both --url and --directory")
-    elif not (args.url or args.directory):
-        print("Please specify either --url or --directory")
-    else:
-        model = load_model_from_file(args.model_path, args.resnet, len(args.categories))
-        if args.url:
-            run_model_online(model, args.site_name, args.categories, args.url)
-        elif args.directory:
-            run_model_offline(model, args.site_name, args.categories, args.directory)
+    model = load_model_from_file(args.model_path, args.resnet, len(args.categories))
+    if args.url:
+        run_model_online(model, args.site_name, args.categories, args.url)
+    elif args.urls:
+        run_model_online(model, args.site_name, args.categories, args.urls)
+    elif args.directory:
+        run_model_offline(model, args.site_name, args.categories, args.directory)
 
 
 def classify_online(model, categories, img_url):
@@ -140,9 +142,7 @@ def run_model_offline(model, site_name, categories, img_dir):
     :return: A pandas DataFrame with predictions.
     :rtype: pd.DataFrame
     """
-    ######################
-    # 1. Get predictions #
-    ######################
+    # Get predictions
     if type(img_dir) is str:
         img_dir = Path(img_dir)
     timestamps, predictions = [], []
@@ -154,9 +154,7 @@ def run_model_offline(model, site_name, categories, img_dir):
         timestamps.append(ts)
         predictions.append(classify_offline(model, categories, str(img_path)))
 
-    ###################
-    # 2. Save to file #
-    ###################
+    # Save to file
     df = pd.DataFrame(zip(timestamps, predictions), columns=["timestamp", "label"])
     save_to = img_dir.joinpath("predictions.csv")
     with open(save_to, "w+") as f:
@@ -167,25 +165,34 @@ def run_model_offline(model, site_name, categories, img_dir):
     df.to_csv(save_to, mode="a", line_terminator="\n", index=False)
 
 
-def run_model_online(model, site_name, categories, img_url):
-    """Gets predicted labels for all images in a directory.
+def run_model_online(model, site_name, categories, urls):
+    """Gets predicted label for image online.
 
     :param model: The model to use.
     :type model: PhenoCamResNet
     :param site_name: The name of the PhenoCam site.
     :type site_name: str
-    :param img_url: The URL of the image for which you want a prediction.
-    :type img_url: str
+    :param url: The URL of the image for which you want a prediction, or the
+        name of a file containing all the URLs, one per line.
+    :type url: str
     """
-    ######################
-    # 1. Get predictions #
-    ######################
-    img, pred = classify_online(model, categories, img_url)
-
-    ###################
-    # 2. Print result #
-    ###################
-    print(pred)
+    if os.path.exists(urls):
+        with open(urls) as f:
+            links = [l.split() for l in f.readlines()]
+        predictions = []
+        for link in links:
+            predictions.append(classify_online(model, categories, link)[1])
+        df = pd.DataFrame(zip(links, predictions), columns=["image", "label"])
+        save_to = "predictions.csv"
+        with open(save_to, "w+") as f:
+            f.write(f"# Site: {site_name}\n")
+            f.write("# Categories:\n")
+            for i, cat in enumerate(categories):
+                f.write(f"# {i}. {cat}\n")
+        df.to_csv(save_to, mode="a", line_terminator="\n", index=False)
+    else:
+        _, pred = classify_online(model, categories, urls)
+        print(pred)
 
 
 if __name__ == "__main__":

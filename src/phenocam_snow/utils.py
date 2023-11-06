@@ -1,15 +1,18 @@
 # Standard library
 from datetime import datetime
 from io import BytesIO
+import functools
 import os
 from pathlib import Path
 import random
+import re
 import requests
 
 # Third party
 import numpy as np
 import pandas as pd
 from PIL import Image
+from tqdm.contrib.concurrent import process_map
 
 
 def get_site_names():
@@ -37,30 +40,73 @@ def get_site_names():
         print("Request timed out")
     return None
 
+def get_all_images(site_name):
+    """Gets URLs to all available images for a given site.
 
-def get_site_dates(site_name):
-    """Gets the dates of the first and last images collected at a site.
+    :param site_name: The name of the site to get images from.
 
-    :param site_name: The name of the PhenoCam site to download from.
-    :type site_name: str
-    :return: A 2-tuple of the format `(first_date, last_date)`, or
-        `(None, None)` if an error occurred.
-    :rtype: Tuple[str,str]|Tuple[None, None]
+    :return: The list of all image URLs, or an empty list if an error occurred.
+    :rtype: List[str]
     """
-    start_date, end_date = None, None
+    image_urls = []
+    base_url = "https://phenocam.nau.edu"
     try:
-        resp = requests.get(
-            f"https://phenocam.nau.edu/webcam/sites/{site_name}/", timeout=10
-        )
+        resp = requests.get(f"{base_url}/webcam/browse/{site_name}", timeout=10)
         if resp.ok:
-            start_date = resp.text.split("<strong>Start Date:</strong> ")[1][:10]
-            end_date = resp.text.split("<strong>Last Date:</strong> ")[1][:10]
+            month_suffixes = re.findall(
+                f"\/webcam\/browse\/{site_name}\/[0-9]{{4}}\/[0-9]{{2}}",
+                resp.text
+            )
+            num_months = len(month_suffixes)
+            results = process_map(
+                functools.partial(__get_images_for_month, base_url, site_name),
+                month_suffixes,
+                range(len(month_suffixes)),
+                max_workers=8,
+                unit="month"
+            )
+            nested_image_urls = [r[0] for r in results]
+            nested_error_msgs = [r[1] for r in results]
+            image_urls = [url for sublist in nested_image_urls for url in sublist]
+            for error_msg_list in nested_error_msgs:
+                for error_msg in error_msg_list:
+                    print(error_msg)
         else:
-            print("Could not retrieve start and end date")
-    except:
-        print("Request timed out")
-    return (start_date, end_date)
+            print(f"Could not retrieve {base_url}/webcam/browse/{site_name}")
+    except Exception as e:
+        print(e)
+    return image_urls
 
+def __get_images_for_month(base_url, site_name, month_suffix, i):
+    """Helper function for get_all_images."""
+    month_url = f"{base_url}{month_suffix}"
+    url_results = []
+    error_messages = []
+    try:
+        resp = requests.get(month_url, timeout=10)
+        if resp.ok:
+            day_pat = f"{month_suffix}\/[0-9]{{2}}"
+            day_suffixes = re.findall(day_pat, resp.text)
+            for ds in day_suffixes:
+                day_url = f"{base_url}{ds}"
+                month = re.search("[0-9]{4}/[0-9]{2}", day_url)[0]
+                img_pat = f"\/data\/archive\/{site_name}\/{month}\/.*\.jpg"
+                try:
+                    resp = requests.get(day_url, timeout=10)
+                    if resp.ok:
+                        url_results = [
+                                f"{base_url}{x}" for x in
+                            re.findall(img_pat, resp.text)
+                        ]
+                    else:
+                        error_messages.append(f"Could not retrieve {day_url}")
+                except Exception as e:
+                    error_messages.append(str(e))
+        else:
+            error_messages.append(f"Could not retrieve {month_url}")
+    except Exception as e:
+        error_messages.append(str(e))
+    return url_results, error_messages
 
 def download(site_name, dates, save_to, n_photos):
     """Downloads photos taken in some time range at a given site.

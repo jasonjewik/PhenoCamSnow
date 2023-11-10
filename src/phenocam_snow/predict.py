@@ -180,9 +180,18 @@ def run_model_online(model, site_name, categories, urls):
         with open(urls) as f:
             links = [l.split() for l in f.readlines()]
         predictions = []
+        dates = []
+        timestamps = []
         for link in links:
             predictions.append(classify_online(model, categories, link)[1])
-        df = pd.DataFrame(zip(links, predictions), columns=["image", "label"])
+            dates.append("-".join(link.split("/")[-1].split("_")[1:4]))
+            timestamp = link.split("/")[-1].split("_")[4][:-4]
+            timestamp = ":".join(timestamp[i:i+2] for i in range(0, len(timestamp), 2))
+            timestamps.append(timestamp)
+        df = pd.DataFrame(
+            zip(dates, timestamps, predictions),
+            columns=["date", "timestamp", "label"]
+        )
         save_to = "predictions.csv"
         with open(save_to, "w+") as f:
             f.write(f"# Site: {site_name}\n")

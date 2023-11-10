@@ -30,7 +30,7 @@ python -m phenocam_snow.train \
    --n_test 30 \
    --classes snow no_snow too_dark
 ```
-This will print out the file path of the best model, which can be substituted into the next command.
+This will print out the file path of the best model, which can be substituted into the next command, which generates a prediction for a single image.
 
 ```console
 python -m phenocam_snow.predict \
@@ -41,7 +41,20 @@ python -m phenocam_snow.predict \
    --url https://phenocam.nau.edu/data/latest/canadaojp.jpg
 ```
 
-Advanced usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).
+If you want to generate predictions for every image for a site, the following commands will do so, and output the predictions to a CSV file.
+
+```console
+python -m phenocam_snow.download canadaojp
+
+python -m phenocam_snow.predict \
+    canadaojp \
+    [path/to/best_model.ckpt] \
+    resnet18 \
+    --categories snow no_snow too_dark
+    --urls urls.txt
+```
+
+The predictions will be written out to `predictions.csv`. Advanced usage details can be found in the [documentation](http://phenocamsnow.readthedocs.io/).
 
 ## Citation
 

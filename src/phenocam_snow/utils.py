@@ -1,7 +1,7 @@
 # Standard library
 from datetime import datetime
 from io import BytesIO
-import functools
+import json
 import os
 from pathlib import Path
 import random
@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
 
 
 def get_site_names():
@@ -49,65 +48,13 @@ def get_all_images(site_name):
     :return: The list of all image URLs, or an empty list if an error occurred.
     :rtype: List[str]
     """
+    resp = requests.get(f"https://phenocam.nau.edu/api/siteimagelist/{site_name}/?format=json")
     image_urls = []
-    base_url = "https://phenocam.nau.edu"
-    try:
-        resp = requests.get(f"{base_url}/webcam/browse/{site_name}", timeout=10)
-        if resp.ok:
-            month_suffixes = re.findall(
-                f"\/webcam\/browse\/{site_name}\/[0-9]{{4}}\/[0-9]{{2}}",
-                resp.text
-            )
-            num_months = len(month_suffixes)
-            results = process_map(
-                functools.partial(__get_images_for_month, base_url, site_name),
-                month_suffixes,
-                range(len(month_suffixes)),
-                max_workers=8,
-                unit="month"
-            )
-            nested_image_urls = [r[0] for r in results]
-            nested_error_msgs = [r[1] for r in results]
-            image_urls = [url for sublist in nested_image_urls for url in sublist]
-            for error_msg_list in nested_error_msgs:
-                for error_msg in error_msg_list:
-                    print(error_msg)
-        else:
-            print(f"Could not retrieve {base_url}/webcam/browse/{site_name}")
-    except Exception as e:
-        print(e)
+    if resp.ok:
+        image_urls = json.loads(resp)["imagelist"]
+    else:
+        print("Could not retrieve image list")
     return image_urls
-
-def __get_images_for_month(base_url, site_name, month_suffix, i):
-    """Helper function for get_all_images."""
-    month_url = f"{base_url}{month_suffix}"
-    url_results = []
-    error_messages = []
-    try:
-        resp = requests.get(month_url, timeout=10)
-        if resp.ok:
-            day_pat = f"{month_suffix}\/[0-9]{{2}}"
-            day_suffixes = re.findall(day_pat, resp.text)
-            for ds in day_suffixes:
-                day_url = f"{base_url}{ds}"
-                month = re.search("[0-9]{4}/[0-9]{2}", day_url)[0]
-                img_pat = f"\/data\/archive\/{site_name}\/{month}\/.*\.jpg"
-                try:
-                    resp = requests.get(day_url, timeout=10)
-                    if resp.ok:
-                        url_results = [
-                                f"{base_url}{x}" for x in
-                            re.findall(img_pat, resp.text)
-                        ]
-                    else:
-                        error_messages.append(f"Could not retrieve {day_url}")
-                except Exception as e:
-                    error_messages.append(str(e))
-        else:
-            error_messages.append(f"Could not retrieve {month_url}")
-    except Exception as e:
-        error_messages.append(str(e))
-    return url_results, error_messages
 
 def download(site_name, save_to, n_photos):
     """Downloads photos taken in some time range at a given site.
